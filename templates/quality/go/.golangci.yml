@@ -1,18 +1,132 @@
 version: "2"
 
+# All linters are enabled. Criticity is mapped below: issues are reported as
+# error / warning / info so the project health is visible at a glance.
+# Linters not listed inherit default-severity (warning): a newly added linter
+# never blocks by accident. Severities are used by the severity-aware output
+# formats (sarif, checkstyle, code-climate) and by `make lint-report`.
 linters:
-  default: none
-  enable:
-    - errcheck
-    - govet
-    - ineffassign
-    - staticcheck
-    - unused
+  default: all
+  exclusions:
+    paths:
+      - ^vendor/
+      - ^third_party/
 
 formatters:
   enable:
     - gofmt
     - goimports
 
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+output:
+  sort-results: true
+  sort-order:
+    - severity
+    - linter
+    - file
+
 run:
   timeout: 5m
+
+severity:
+  default-severity: warning
+  rules:
+    # error: bugs, security issues, broken or unsafe code - must be fixed
+    - severity: error
+      linters:
+        - asasalint
+        - bodyclose
+        - contextcheck
+        - copylocks
+        - copyloopvar
+        - deepequalerrors
+        - dogsled
+        - durationcheck
+        - errcheck
+        - errname
+        - errorlint
+        - forcetypeassert
+        - gosec
+        - govet
+        - govulncheck
+        - ineffassign
+        - lostcancel
+        - makezero
+        - nilerr
+        - nilnil
+        - noctx
+        - redef
+        - rowserrcheck
+        - sqlclosecheck
+        - staticcheck
+        - stringintconv
+        - testinggoroutine
+        - thelper
+        - unconvert
+        - wastedassign
+    # warning: style, maintainability, complexity, performance - should be fixed
+    - severity: warning
+      linters:
+        - bidichk
+        - bools
+        - containedctx
+        - cyclop
+        - dupl
+        - dupword
+        - embeddedstructfieldcheck
+        - err113
+        - errchkjson
+        - exhaustive
+        - fatcontext
+        - funlen
+        - gochecksumtype
+        - gocognit
+        - gocritic
+        - gocyclo
+        - goconst
+        - ginkgolinter
+        - godot
+        - importas
+        - intrange
+        - lll
+        - misspell
+        - nestif
+        - nonamedreturns
+        - perfsprint
+        - prealloc
+        - protogetter
+        - revive
+        - sloglint
+        - testpackage
+        - tparallel
+        - unparam
+        - unused
+        - usestdlibvars
+        - whitespace
+    # info: opinionated or pedantic checks - review, never blocks
+    - severity: info
+      linters:
+        - asciicheck
+        - canonicalheader
+        - decorder
+        - depguard
+        - exhaustruct
+        - exptostd
+        - forbidigo
+        - funcorder
+        - gocheckcompilerdirectives
+        - gochecknoglobals
+        - gochecknoinits
+        - godoclint
+        - godox
+        - goheader
+        - interfacebloat
+        - mnd
+        - nakedret
+        - nlreturn
+        - tagliatelle
+        - varnamelen
+        - wsl

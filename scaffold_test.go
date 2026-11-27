@@ -129,7 +129,7 @@ func TestApply(t *testing.T) {
 
 func TestNewWithDevAndQualityStages(t *testing.T) {
 	langFiles := map[string][]string{
-		"go":     {"Makefile.lang", ".tool-versions", ".golangci.yml"},
+		"go":     {"Makefile.lang", ".tool-versions", ".golangci.yml", "scripts/lint-report.sh"},
 		"node":   {"Makefile.lang", ".tool-versions", "eslint.config.js", ".prettierrc", "commitlint.config.js"},
 		"python": {"Makefile.lang", ".tool-versions", "ruff.toml", "mypy.ini"},
 	}
@@ -155,12 +155,34 @@ func TestNewWithDevAndQualityStages(t *testing.T) {
 			if lang == "go" && !strings.Contains(string(data), "demo") {
 				t.Errorf("lang go: Makefile.lang was not rendered with the project name: %q", data)
 			}
+			if lang == "go" {
+				info, err := os.Stat(filepath.Join(dir, "scripts", "lint-report.sh"))
+				if err != nil {
+					t.Fatal(err)
+				}
+				if info.Mode().Perm()&0o111 == 0 {
+					t.Errorf("scripts/lint-report.sh lost its executable bit: %v", info.Mode())
+				}
+			}
 			for _, other := range []string{"go", "node", "python"} {
 				if _, err := os.Stat(filepath.Join(dir, other)); err == nil {
 					t.Errorf("lang %s: stage language directories must not be copied verbatim (found %s/)", lang, other)
 				}
 			}
 		})
+	}
+}
+
+func TestGolangciConfigSeverity(t *testing.T) {
+	data, err := templatesFS.ReadFile("templates/quality/go/.golangci.yml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg := string(data)
+	for _, want := range []string{"default: all", "default-severity: warning", "severity: error", "severity: warning", "severity: info"} {
+		if !strings.Contains(cfg, want) {
+			t.Errorf(".golangci.yml missing %q", want)
+		}
 	}
 }
 

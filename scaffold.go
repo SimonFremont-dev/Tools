@@ -185,7 +185,11 @@ func copyTree(base, dir string, vars Vars, force bool, skipLangs map[string]bool
 		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 			return err
 		}
-		return os.WriteFile(target, []byte(content), 0o644)
+		perm := fs.FileMode(0o644)
+		if info, err := d.Info(); err == nil && info.Mode().Perm()&0o111 != 0 {
+			perm = 0o755
+		}
+		return os.WriteFile(target, []byte(content), perm)
 	})
 }
 

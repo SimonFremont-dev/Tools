@@ -8,8 +8,9 @@ for the layout rules and placeholders.
   `go` follows the [Standard Go Project Layout](https://github.com/golang-standards/project-layout)
 - `dev/` — local development environment: `Makefile` + per-language `Makefile.lang`
   overlay, `.tool-versions`, `.env.example`, `docker-compose.yml`, devcontainer
-- `quality/` — pre-commit, markdownlint; per language: `.golangci.yml`,
-  eslint/prettier/commitlint, ruff/mypy
+- `quality/` — pre-commit, markdownlint; per language: `.golangci.yml` (all
+  linters enabled, info/warning/error severity map + `scripts/lint-report.sh`
+  health summary via `make lint-report`), eslint/prettier/commitlint, ruff/mypy
 - `build/` — release config, Dockerfiles, `.dockerignore` (P4)
 - `cicd/` — pipeline templates per provider and language (P5)
 - `kubernetes/` — manifests / Helm chart, secrets, Skaffold (P6)
