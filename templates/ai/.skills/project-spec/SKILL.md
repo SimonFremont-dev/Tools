@@ -16,6 +16,10 @@ Ask the user, batching related questions together:
 - CI/CD provider: `github-actions` (default) | `gitlab-ci` | other?
 - Deployment target: `none` | `docker-compose` | `kubernetes`?
 - Which stages to (re)apply: `dev`, `quality`, `build`, `cicd`, `kubernetes`, `ai`, `docs`?
+- Which practice skills should this project enforce (the linkable skill set)?
+  Available in `.skills/`: `tdd`, `clean-code`, `clean-architecture` (plus
+  language skills like `go`). Remove the SKILL.md dirs of the ones the project
+  does not follow, and list the chosen ones in `AGENTS.md`.
 
 Record the answers as the project spec (a short markdown summary the user can
 edit later, e.g. `docs/spec.md`).

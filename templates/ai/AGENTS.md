@@ -16,8 +16,11 @@ This project was scaffolded from the Tools library
 
 ## Changing the project setup with an agent
 
-- Skills live in `.skills/` — start with `.skills/project-spec` to redefine
-  the project spec (it asks questions, re-applies stages with the `tools` CLI,
-  and alerts on tools that have no conventions in the Tools repo).
+- Skills live in `.skills/` — this project's skill set:
+  - `project-spec` — redefine the spec by answering questions, re-apply stages
+    with the `tools` CLI, alert on tools that have no conventions in the Tools repo
+  - `tdd`, `clean-code`, `clean-architecture` — practice skills (linkable to any
+    project; prune the ones this project does not follow)
+  - language skill: `{{LANG}}` (if present)
 - Re-apply a stage: `tools apply <stage> --lang {{LANG}} --dir . [--force]`
   (build the CLI from the Tools repo: `go build -o bin/tools ./cmd/tools`).
