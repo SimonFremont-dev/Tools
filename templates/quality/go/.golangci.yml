@@ -2,15 +2,52 @@ version: "2"
 
 # All linters are enabled. Criticity is mapped below: issues are reported as
 # error / warning / info so the project health is visible at a glance.
-# Linters not listed inherit default-severity (warning): a newly added linter
-# never blocks by accident. Severities are used by the severity-aware output
-# formats (sarif, checkstyle, code-climate) and by `make lint-report`.
+# Linters not listed inherit the default (warning): a newly added linter never
+# blocks by accident. Severities are carried by the severity-aware output
+# formats (json, checkstyle, code-climate) and by `make lint-report`.
 linters:
   default: all
+  settings:
+    depguard:
+      rules:
+        main:
+          allow:
+            - $gostd
+            - {{MODULE}}
+            - ^{{MODULE}}/
+    forbidigo:
+      forbid:
+        - pattern: ^panic\(
+          msg: return errors instead of panicking
   exclusions:
     paths:
       - ^vendor/
       - ^third_party/
+    rules:
+      # tests are allowed to be looser: no need for pedantic style rules there
+      - path: _test\.go$
+        linters:
+          - cyclop
+          - depguard
+          - dupl
+          - err113
+          - forbidigo
+          - funlen
+          - gocognit
+          - goconst
+          - gosec
+          - lll
+          - mnd
+          - nlreturn
+          - noinlineerr
+          - nonamedreturns
+          - paralleltest
+          - perfsprint
+          - testpackage
+          - varnamelen
+          - wrapcheck
+          - wsl
+          - wsl_v5
 
 formatters:
   enable:
@@ -32,7 +69,7 @@ run:
   timeout: 5m
 
 severity:
-  default-severity: warning
+  default: warning
   rules:
     # error: bugs, security issues, broken or unsafe code - must be fixed
     - severity: error
@@ -55,6 +92,7 @@ severity:
         - ineffassign
         - lostcancel
         - makezero
+        - mirror
         - nilerr
         - nilnil
         - noctx
@@ -93,7 +131,9 @@ severity:
         - intrange
         - lll
         - misspell
+        - modernize
         - nestif
+        - noinlineerr
         - nonamedreturns
         - perfsprint
         - prealloc
@@ -106,6 +146,7 @@ severity:
         - unused
         - usestdlibvars
         - whitespace
+        - wrapcheck
     # info: opinionated or pedantic checks - review, never blocks
     - severity: info
       linters:
@@ -113,7 +154,7 @@ severity:
         - canonicalheader
         - decorder
         - depguard
-        - exhaustruct
+        - exhaustruct_v5
         - exptostd
         - forbidigo
         - funcorder
@@ -127,6 +168,7 @@ severity:
         - mnd
         - nakedret
         - nlreturn
+        - paralleltest
         - tagliatelle
         - varnamelen
-        - wsl
+        - wsl_v5

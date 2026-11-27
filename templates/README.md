@@ -25,10 +25,11 @@ for the layout rules and placeholders.
   practice skills `tdd` / `clean-code` / `clean-architecture` (language- and
   tool-agnostic, linkable to any project's skill set) + per-language skills
   (e.g. `go`)
-- `docs/` — README / CONTRIBUTING / ADR templates for generated projects (P8)
+- `docs/` — `docs/` index + `spec.md` (project spec), ADR template, runbook,
+  and a generated-project `CONTRIBUTING.md`
 
 Scaffold a project with the CLI:
 
 ```sh
-tools new myapp --lang go --stages dev,quality,build,cicd,kubernetes,ai
+tools new myapp --lang go --stages dev,quality,build,cicd,kubernetes,ai,docs
 ```

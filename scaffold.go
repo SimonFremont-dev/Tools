@@ -1,13 +1,16 @@
+// Package tools renders the embedded templates/ tree into new projects.
 package tools
 
 import (
 	"embed"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -15,9 +18,30 @@ import (
 //go:embed all:templates
 var templatesFS embed.FS
 
-const templatesRoot = "templates"
+const (
+	templatesRoot  = "templates"
+	stageBootstrap = "bootstrap"
+	defaultPerm    = 0o644
+	execPerm       = 0o755
+	dirPerm        = 0o750
+)
 
-var placeholderRe = regexp.MustCompile(`\{\{[A-Z0-9_]+\}\}`)
+var (
+	placeholderRe = regexp.MustCompile(`\{\{[A-Z0-9_]+\}\}`)
+
+	// ErrUnknownStage is returned when a stage does not exist under templates/.
+	ErrUnknownStage = errors.New("tools: unknown stage")
+	// ErrUnknownLanguage is returned when a language has no bootstrap template.
+	ErrUnknownLanguage = errors.New("tools: unknown language")
+	// ErrBootstrapViaNew is returned when Apply is called with the bootstrap stage.
+	ErrBootstrapViaNew = errors.New("tools: the bootstrap stage is only available via New")
+	// ErrUnresolvedPlaceholder is returned when a template keeps a {{PLACEHOLDER}}.
+	ErrUnresolvedPlaceholder = errors.New("tools: unresolved placeholder")
+	// ErrTargetExists is returned when a file would be overwritten without force.
+	ErrTargetExists = errors.New("tools: file already exists (use force to overwrite)")
+	// ErrTargetNotEmpty is returned when the target directory is not empty.
+	ErrTargetNotEmpty = errors.New("tools: directory is not empty (use force to overwrite)")
+)
 
 // Vars holds the values substituted into {{PLACEHOLDER}}s.
 type Vars map[string]string
@@ -30,15 +54,18 @@ func DefaultVars(project, module, lang string) Vars {
 	if module == "" {
 		module = project
 	}
+
 	image := project
+
 	if rest, ok := strings.CutPrefix(module, "github.com/"); ok {
 		image = "ghcr.io/" + rest
 	}
+
 	return Vars{
 		"PROJECT": project,
 		"MODULE":  module,
 		"LANG":    lang,
-		"YEAR":    fmt.Sprintf("%d", time.Now().Year()),
+		"YEAR":    strconv.Itoa(time.Now().Year()),
 		"IMAGE":   image,
 	}
 }
@@ -51,16 +78,19 @@ func Stages() ([]string, error) {
 // Langs lists the languages available for the bootstrap stage. The "common"
 // directory holds language-independent files and is not a language.
 func Langs() ([]string, error) {
-	dirs, err := subdirs(templatesRoot + "/bootstrap")
+	dirs, err := subdirs(templatesRoot + "/" + stageBootstrap)
 	if err != nil {
 		return nil, err
 	}
+
 	langs := make([]string, 0, len(dirs))
+
 	for _, d := range dirs {
 		if d != "common" {
 			langs = append(langs, d)
 		}
 	}
+
 	return langs, nil
 }
 
@@ -71,29 +101,37 @@ func New(project, lang string, stages []string, dir string, vars Vars, force boo
 	if dir == "" {
 		dir = project
 	}
-	if err := checkTarget(dir, force); err != nil {
+
+	err := checkTarget(dir, force)
+	if err != nil {
 		return err
 	}
-	all := []string{"bootstrap"}
+
+	all := []string{stageBootstrap}
+
 	for _, s := range stages {
-		if s != "bootstrap" {
+		if s != stageBootstrap {
 			all = append(all, s)
 		}
 	}
+
 	for _, stage := range all {
-		if err := copyStage(stage, lang, dir, vars, force); err != nil {
+		err = copyStage(stage, lang, dir, vars, force)
+		if err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
 // Apply renders a single stage into an existing project directory. The
 // bootstrap stage is only available through New.
 func Apply(stage, lang, dir string, vars Vars, force bool) error {
-	if stage == "bootstrap" {
-		return fmt.Errorf("tools: the bootstrap stage is only available via New")
+	if stage == stageBootstrap {
+		return ErrBootstrapViaNew
 	}
+
 	return copyStage(stage, lang, dir, vars, force)
 }
 
@@ -104,130 +142,247 @@ func Render(s string, vars Vars) (string, error) {
 		if v, ok := vars[p[2:len(p)-2]]; ok {
 			return v
 		}
+
 		return p
 	})
+
 	if left := placeholderRe.FindString(out); left != "" {
-		return "", fmt.Errorf("tools: unresolved placeholder %s", left)
+		return "", fmt.Errorf("%w: %s", ErrUnresolvedPlaceholder, left)
 	}
+
 	return out, nil
 }
 
 func copyStage(stage, lang, dir string, vars Vars, force bool) error {
-	if stage == "bootstrap" {
-		common := templatesRoot + "/bootstrap/common"
-		if _, err := templatesFS.ReadDir(common); err == nil {
-			if err := copyTree(common, dir, vars, force, nil); err != nil {
-				return err
-			}
-		}
-		base := templatesRoot + "/bootstrap/" + lang
-		if _, err := templatesFS.ReadDir(base); err != nil {
-			return fmt.Errorf("tools: unknown language %q for stage %q", lang, stage)
-		}
-		return copyTree(base, dir, vars, force, nil)
+	if stage == stageBootstrap {
+		return copyBootstrap(lang, dir, vars, force)
 	}
+
+	return copyOtherStage(stage, lang, dir, vars, force)
+}
+
+func copyBootstrap(lang, dir string, vars Vars, force bool) error {
+	common := templatesRoot + "/" + stageBootstrap + "/common"
+
+	_, commonErr := templatesFS.ReadDir(common)
+	if commonErr == nil {
+		err := copyTree(common, dir, vars, force, nil)
+		if err != nil {
+			return err
+		}
+	}
+
+	base := templatesRoot + "/" + stageBootstrap + "/" + lang
+
+	_, err := templatesFS.ReadDir(base)
+	if err != nil {
+		return fmt.Errorf("%w %q for stage %q", ErrUnknownLanguage, lang, stageBootstrap)
+	}
+
+	return copyTree(base, dir, vars, force, nil)
+}
+
+func copyOtherStage(stage, lang, dir string, vars Vars, force bool) error {
 	base := templatesRoot + "/" + stage
-	if _, err := templatesFS.ReadDir(base); err != nil {
-		return fmt.Errorf("tools: unknown stage %q", stage)
+
+	_, err := templatesFS.ReadDir(base)
+	if err != nil {
+		return fmt.Errorf("%w %q", ErrUnknownStage, stage)
 	}
-	langs, err := Langs()
+
+	skip, err := langDirs()
 	if err != nil {
 		return err
 	}
-	skip := map[string]bool{}
-	for _, l := range langs {
-		skip[l] = true
-	}
-	if err := copyTree(base, dir, vars, force, skip); err != nil {
+
+	err = copyTree(base, dir, vars, force, skip)
+	if err != nil {
 		return err
 	}
-	if lang != "" {
-		overlay := base + "/" + lang
-		if _, err := templatesFS.ReadDir(overlay); err == nil {
-			if err := copyTree(overlay, dir, vars, force, nil); err != nil {
-				return err
-			}
+
+	if lang == "" {
+		return nil
+	}
+
+	overlay := base + "/" + lang
+
+	_, overlayErr := templatesFS.ReadDir(overlay)
+	if overlayErr == nil {
+		err = copyTree(overlay, dir, vars, force, nil)
+		if err != nil {
+			return err
 		}
 	}
+
 	return nil
 }
 
+func langDirs() (map[string]bool, error) {
+	langs, err := Langs()
+	if err != nil {
+		return nil, err
+	}
+
+	skip := make(map[string]bool, len(langs))
+
+	for _, l := range langs {
+		skip[l] = true
+	}
+
+	return skip, nil
+}
+
 func copyTree(base, dir string, vars Vars, force bool, skipLangs map[string]bool) error {
-	return fs.WalkDir(templatesFS, base, func(path string, d fs.DirEntry, err error) error {
+	walk := func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if d.IsDir() && skipLangs[d.Name()] && path == base+"/"+d.Name() {
+
+		if entry.IsDir() && skipLangs[entry.Name()] && path == base+"/"+entry.Name() {
 			return fs.SkipDir
 		}
-		rel, err := filepath.Rel(base, path)
-		if err != nil {
-			return err
-		}
-		if rel == "." {
-			return nil
-		}
-		name, err := Render(rel, vars)
-		if err != nil {
-			return fmt.Errorf("tools: %s: %w", path, err)
-		}
-		name = strings.TrimSuffix(name, ".tmpl")
-		target := filepath.Join(dir, filepath.FromSlash(name))
-		if d.IsDir() {
-			return os.MkdirAll(target, 0o755)
-		}
-		if !force {
-			if _, err := os.Stat(target); err == nil {
-				return fmt.Errorf("tools: %s already exists (use force to overwrite)", target)
-			}
-		}
-		data, err := templatesFS.ReadFile(path)
-		if err != nil {
-			return err
-		}
-		content, err := Render(string(data), vars)
-		if err != nil {
-			return fmt.Errorf("tools: %s: %w", path, err)
-		}
-		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
-			return err
-		}
-		perm := fs.FileMode(0o644)
-		if strings.HasSuffix(name, ".sh") {
-			perm = 0o755
-		}
-		return os.WriteFile(target, []byte(content), perm)
-	})
+
+		return copyEntry(base, dir, path, entry, vars, force)
+	}
+
+	err := fs.WalkDir(templatesFS, base, walk)
+	if err != nil {
+		return fmt.Errorf("tools: walk %s: %w", base, err)
+	}
+
+	return nil
+}
+
+func copyEntry(base, dir, path string, entry fs.DirEntry, vars Vars, force bool) error {
+	rel, err := filepath.Rel(base, path)
+	if err != nil {
+		return fmt.Errorf("tools: resolve %s: %w", path, err)
+	}
+
+	if rel == "." {
+		return nil
+	}
+
+	name, err := Render(rel, vars)
+	if err != nil {
+		return fmt.Errorf("tools: %s: %w", path, err)
+	}
+
+	name = strings.TrimSuffix(name, ".tmpl")
+
+	target := filepath.Join(dir, filepath.FromSlash(name))
+
+	if entry.IsDir() {
+		return makeDir(target)
+	}
+
+	err = targetExists(target, force)
+	if err != nil {
+		return err
+	}
+
+	content, err := renderTemplate(path, vars)
+	if err != nil {
+		return err
+	}
+
+	err = makeDir(filepath.Dir(target))
+	if err != nil {
+		return err
+	}
+
+	return writeFile(target, content, filePerm(name))
+}
+
+func makeDir(target string) error {
+	err := os.MkdirAll(target, dirPerm)
+	if err != nil {
+		return fmt.Errorf("tools: mkdir %s: %w", target, err)
+	}
+
+	return nil
+}
+
+func filePerm(name string) fs.FileMode {
+	if strings.HasSuffix(name, ".sh") {
+		return execPerm
+	}
+
+	return defaultPerm
+}
+
+func writeFile(target, content string, perm fs.FileMode) error {
+	err := os.WriteFile(target, []byte(content), perm) // #nosec G304 -- target derives from embedded template names
+	if err != nil {
+		return fmt.Errorf("tools: write %s: %w", target, err)
+	}
+
+	return nil
+}
+
+func renderTemplate(path string, vars Vars) (string, error) {
+	data, err := templatesFS.ReadFile(path)
+	if err != nil {
+		return "", fmt.Errorf("tools: read template %s: %w", path, err)
+	}
+
+	content, err := Render(string(data), vars)
+	if err != nil {
+		return "", fmt.Errorf("tools: %s: %w", path, err)
+	}
+
+	return content, nil
+}
+
+func targetExists(target string, force bool) error {
+	if force {
+		return nil
+	}
+
+	_, err := os.Stat(target) // #nosec G304 -- target derives from embedded template names
+	if err == nil {
+		return fmt.Errorf("%w: %s", ErrTargetExists, target)
+	}
+
+	return nil
 }
 
 func checkTarget(dir string, force bool) error {
 	if force {
 		return nil
 	}
+
 	entries, err := os.ReadDir(dir)
 	if os.IsNotExist(err) {
 		return nil
 	}
+
 	if err != nil {
-		return err
+		return fmt.Errorf("tools: read dir %s: %w", dir, err)
 	}
+
 	if len(entries) > 0 {
-		return fmt.Errorf("tools: %s is not empty (use force to overwrite)", dir)
+		return fmt.Errorf("%w: %s", ErrTargetNotEmpty, dir)
 	}
+
 	return nil
 }
 
 func subdirs(root string) ([]string, error) {
 	entries, err := templatesFS.ReadDir(root)
 	if err != nil {
-		return nil, fmt.Errorf("tools: %w", err)
+		return nil, fmt.Errorf("tools: read templates %s: %w", root, err)
 	}
+
 	var dirs []string
+
 	for _, e := range entries {
 		if e.IsDir() {
 			dirs = append(dirs, e.Name())
 		}
 	}
+
 	sort.Strings(dirs)
+
 	return dirs, nil
 }
