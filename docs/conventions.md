@@ -33,6 +33,7 @@ Placeholders also work in file and directory names, e.g. `cmd/{{PROJECT}}/main.g
 - Generated projects must be standalone: do not make them import this module.
 - Go templates follow the [Standard Go Project Layout](https://github.com/golang-standards/project-layout):
   `cmd/`, `internal/`, `pkg/`, `api/`, `configs/`, `build/`, `deployments/`, `scripts/`,
-  `test/`, `docs/` — never a `src/` directory. Later stages map onto it: `build/`
-  gets packaging/CI files, `deployments/` gets kubernetes/docker-compose manifests,
-  `docs/` gets project documentation.
+  `test/`, `docs/` — never a `src/` directory. Later stages map onto it: the `build`
+  stage puts `Dockerfile`/`.dockerignore`/release config at the project root (the
+  docker build context), `cicd/` puts pipeline files under `.github/` or `build/ci`,
+  `kubernetes/` puts manifests under `deployments/`, `docs/` fills `docs/`.

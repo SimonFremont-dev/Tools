@@ -1,6 +1,7 @@
-.PHONY: setup run test lint build clean docker-up docker-down
+.PHONY: setup run test lint build clean docker-up docker-down docker-build lint-report
 
 PROJECT ?= {{PROJECT}}
+DOCKER_IMAGE ?= $(PROJECT):latest
 
 -include Makefile.lang
 
@@ -23,6 +24,9 @@ test:
 lint:
 	$(LINT_CMD)
 
+lint-report:
+	./scripts/lint-report.sh
+
 build:
 	$(BUILD_CMD)
 
@@ -34,3 +38,6 @@ docker-up:
 
 docker-down:
 	docker compose down
+
+docker-build:
+	docker build -t $(DOCKER_IMAGE) .

@@ -11,7 +11,8 @@ for the layout rules and placeholders.
 - `quality/` — pre-commit, markdownlint; per language: `.golangci.yml` (all
   linters enabled, info/warning/error severity map + `scripts/lint-report.sh`
   health summary via `make lint-report`), eslint/prettier/commitlint, ruff/mypy
-- `build/` — release config, Dockerfiles, `.dockerignore` (P4)
+- `build/` — per-language multi-stage `Dockerfile` + `.dockerignore` at the project
+  root, Go release config (`.goreleaser.yaml`)
 - `cicd/` — pipeline templates per provider and language (P5)
 - `kubernetes/` — manifests / Helm chart, secrets, Skaffold (P6)
 - `ai/` — agent instructions and per-language skills copied into generated projects (P7)
@@ -20,6 +21,6 @@ for the layout rules and placeholders.
 Scaffold a project with the CLI:
 
 ```sh
-tools new myapp --lang go --stages dev,quality
-tools apply build --lang go --dir ./myapp
+tools new myapp --lang go --stages dev,quality,build
+tools apply cicd --lang go --dir ./myapp
 ```
