@@ -186,7 +186,7 @@ func copyTree(base, dir string, vars Vars, force bool, skipLangs map[string]bool
 			return err
 		}
 		perm := fs.FileMode(0o644)
-		if info, err := d.Info(); err == nil && info.Mode().Perm()&0o111 != 0 {
+		if strings.HasSuffix(name, ".sh") {
 			perm = 0o755
 		}
 		return os.WriteFile(target, []byte(content), perm)

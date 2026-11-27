@@ -29,6 +29,7 @@ Placeholders also work in file and directory names, e.g. `cmd/{{PROJECT}}/main.g
 - A template file ending in `.tmpl` is written without the suffix. Use it
   for files this module's own Go tooling must not pick up (a template
   `go.mod`, template `*.go` sources).
+- Template `*.sh` files are written executable (0755).
 - Generated projects must be standalone: do not make them import this module.
 - Go templates follow the [Standard Go Project Layout](https://github.com/golang-standards/project-layout):
   `cmd/`, `internal/`, `pkg/`, `api/`, `configs/`, `build/`, `deployments/`, `scripts/`,
