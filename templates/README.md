@@ -13,7 +13,8 @@ for the layout rules and placeholders.
   health summary via `make lint-report`), eslint/prettier/commitlint, ruff/mypy
 - `build/` — per-language multi-stage `Dockerfile` + `.dockerignore` at the project
   root, Go release config (`.goreleaser.yaml`)
-- `cicd/` — pipeline templates per provider and language (P5)
+- `cicd/` — GitHub Actions (`ci` via mise+make, `docker` build/push to ghcr,
+  go-only `release` via goreleaser), Dependabot per language, PR/issue templates
 - `kubernetes/` — manifests / Helm chart, secrets, Skaffold (P6)
 - `ai/` — agent instructions and per-language skills copied into generated projects (P7)
 - `docs/` — README / CONTRIBUTING / ADR templates for generated projects (P8)
@@ -21,6 +22,5 @@ for the layout rules and placeholders.
 Scaffold a project with the CLI:
 
 ```sh
-tools new myapp --lang go --stages dev,quality,build
-tools apply cicd --lang go --dir ./myapp
+tools new myapp --lang go --stages dev,quality,build,cicd
 ```

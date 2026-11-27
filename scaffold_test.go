@@ -49,7 +49,7 @@ func TestNew(t *testing.T) {
 	if err != nil {
 		t.Fatalf("rendered cmd/demo/main.go missing: %v", err)
 	}
-	if strings.Contains(string(data), "{{") {
+	if placeholderRe.MatchString(string(data)) {
 		t.Errorf("main.go still contains placeholders: %q", data)
 	}
 
@@ -73,7 +73,7 @@ func TestNew(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		if strings.Contains(string(data), "{{") {
+		if placeholderRe.MatchString(string(data)) {
 			t.Errorf("%s contains an unresolved placeholder", path)
 		}
 		return nil
@@ -129,15 +129,15 @@ func TestApply(t *testing.T) {
 
 func TestNewWithDevAndQualityStages(t *testing.T) {
 	langFiles := map[string][]string{
-		"go":     {"Makefile.lang", ".tool-versions", ".golangci.yml", "scripts/lint-report.sh", ".goreleaser.yaml", "Dockerfile", ".dockerignore"},
-		"node":   {"Makefile.lang", ".tool-versions", "eslint.config.js", ".prettierrc", "commitlint.config.js", "Dockerfile", ".dockerignore"},
-		"python": {"Makefile.lang", ".tool-versions", "ruff.toml", "mypy.ini", "Dockerfile", ".dockerignore"},
+		"go":     {"Makefile.lang", ".tool-versions", ".golangci.yml", "scripts/lint-report.sh", ".goreleaser.yaml", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/docker.yml", ".github/workflows/release.yml", ".github/dependabot.yml", ".github/pull_request_template.md", ".github/ISSUE_TEMPLATE/bug_report.yml"},
+		"node":   {"Makefile.lang", ".tool-versions", "eslint.config.js", ".prettierrc", "commitlint.config.js", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/docker.yml", ".github/dependabot.yml", ".github/pull_request_template.md"},
+		"python": {"Makefile.lang", ".tool-versions", "ruff.toml", "mypy.ini", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/docker.yml", ".github/dependabot.yml", ".github/pull_request_template.md"},
 	}
 	for lang, files := range langFiles {
 		t.Run(lang, func(t *testing.T) {
 			dir := filepath.Join(t.TempDir(), "demo")
 			vars := DefaultVars("demo", "", lang)
-			if err := New("demo", lang, []string{"dev", "quality", "build"}, dir, vars, false); err != nil {
+			if err := New("demo", lang, []string{"dev", "quality", "build", "cicd"}, dir, vars, false); err != nil {
 				t.Fatalf("New() error = %v", err)
 			}
 			for _, f := range append(files, ".pre-commit-config.yaml", ".markdownlint.json", "Makefile") {
@@ -149,7 +149,7 @@ func TestNewWithDevAndQualityStages(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if strings.Contains(string(data), "{{") {
+			if placeholderRe.MatchString(string(data)) {
 				t.Errorf("lang %s: Makefile.lang has unresolved placeholders: %q", lang, data)
 			}
 			if lang == "go" && !strings.Contains(string(data), "demo") {
@@ -162,7 +162,7 @@ func TestNewWithDevAndQualityStages(t *testing.T) {
 			if lang == "go" && !strings.Contains(string(dockerfile), "demo") {
 				t.Errorf("lang go: Dockerfile was not rendered with the project name")
 			}
-			if strings.Contains(string(dockerfile), "{{") {
+			if placeholderRe.MatchString(string(dockerfile)) {
 				t.Errorf("lang %s: Dockerfile has unresolved placeholders", lang)
 			}
 			if lang == "go" {
@@ -180,6 +180,24 @@ func TestNewWithDevAndQualityStages(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestCicdWorkflowsRender(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "demo")
+	vars := DefaultVars("demo", "github.com/me/demo", "go")
+	if err := New("demo", "go", []string{"cicd"}, dir, vars, false); err != nil {
+		t.Fatal(err)
+	}
+	wf, err := os.ReadFile(filepath.Join(dir, ".github", "workflows", "docker.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(wf), "${{ github.repository }}") {
+		t.Errorf("docker.yml lost its GitHub Actions expression:\n%s", wf)
+	}
+	if placeholderRe.MatchString(string(wf)) {
+		t.Errorf("docker.yml has unresolved placeholders:\n%s", wf)
 	}
 }
 
