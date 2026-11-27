@@ -42,5 +42,9 @@ tools/
 ## Development
 
 ```sh
-go test ./...
+make test    # go test ./...
+make lint    # golangci-lint run ./... (all linters, see .golangci.yml)
+make smoke   # scaffold a demo project with all stages and run it
 ```
+
+CI runs on every PR (`.github/workflows/ci.yml`): format, lint, test, build+smoke.
