@@ -18,6 +18,8 @@ Rendered by the scaffold engine (`scaffold.go`) before files are written:
 - `{{MODULE}}` — module / import path (defaults to the project name)
 - `{{LANG}}` — language key (`go`, `node`, `python`)
 - `{{YEAR}}` — current year
+- `{{IMAGE}}` — container image reference: `ghcr.io/<owner>/<repo>` when
+  `{{MODULE}}` is a `github.com/...` path, else the project name
 
 Placeholders also work in file and directory names, e.g. `cmd/{{PROJECT}}/main.go`.
 

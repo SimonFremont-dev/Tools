@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{PROJECT}}-config
+  namespace: {{PROJECT}}
+  labels:
+    app: {{PROJECT}}
+data:
+  APP_ENV: production
+  PORT: "8080"

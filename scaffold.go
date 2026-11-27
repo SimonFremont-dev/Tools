@@ -23,16 +23,23 @@ var placeholderRe = regexp.MustCompile(`\{\{[A-Z0-9_]+\}\}`)
 type Vars map[string]string
 
 // DefaultVars returns the standard variables for a project. module defaults
-// to the project name when empty.
+// to the project name when empty. IMAGE is the container image reference:
+// ghcr.io/<owner>/<repo> when module is a github.com path, else the project
+// name (for local builds).
 func DefaultVars(project, module, lang string) Vars {
 	if module == "" {
 		module = project
+	}
+	image := project
+	if rest, ok := strings.CutPrefix(module, "github.com/"); ok {
+		image = "ghcr.io/" + rest
 	}
 	return Vars{
 		"PROJECT": project,
 		"MODULE":  module,
 		"LANG":    lang,
 		"YEAR":    fmt.Sprintf("%d", time.Now().Year()),
+		"IMAGE":   image,
 	}
 }
 

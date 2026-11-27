@@ -13,8 +13,10 @@ func TestStagesAndLangs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !contains(stages, "bootstrap") || !contains(stages, "dev") {
-		t.Errorf("Stages() = %v, want bootstrap and dev", stages)
+	for _, want := range []string{"bootstrap", "dev", "quality", "build", "cicd", "kubernetes"} {
+		if !contains(stages, want) {
+			t.Errorf("Stages() = %v, missing %s", stages, want)
+		}
 	}
 	langs, err := Langs()
 	if err != nil {
@@ -129,7 +131,7 @@ func TestApply(t *testing.T) {
 
 func TestNewWithDevAndQualityStages(t *testing.T) {
 	langFiles := map[string][]string{
-		"go":     {"Makefile.lang", ".tool-versions", ".golangci.yml", "scripts/lint-report.sh", ".goreleaser.yaml", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/docker.yml", ".github/workflows/release.yml", ".github/dependabot.yml", ".github/pull_request_template.md", ".github/ISSUE_TEMPLATE/bug_report.yml"},
+		"go":     {"Makefile.lang", ".tool-versions", ".golangci.yml", "scripts/lint-report.sh", ".goreleaser.yaml", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/docker.yml", ".github/workflows/release.yml", ".github/dependabot.yml", ".github/pull_request_template.md", ".github/ISSUE_TEMPLATE/bug_report.yml", "deployments/kustomization.yaml", "deployments/deployment.yaml", "deployments/service.yaml", "deployments/ingress.yaml", "deployments/hpa.yaml", "deployments/overlays/dev/kustomization.yaml", "deployments/overlays/staging/kustomization.yaml", "deployments/overlays/prod/kustomization.yaml", "skaffold.yaml"},
 		"node":   {"Makefile.lang", ".tool-versions", "eslint.config.js", ".prettierrc", "commitlint.config.js", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/docker.yml", ".github/dependabot.yml", ".github/pull_request_template.md"},
 		"python": {"Makefile.lang", ".tool-versions", "ruff.toml", "mypy.ini", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/docker.yml", ".github/dependabot.yml", ".github/pull_request_template.md"},
 	}
@@ -137,7 +139,7 @@ func TestNewWithDevAndQualityStages(t *testing.T) {
 		t.Run(lang, func(t *testing.T) {
 			dir := filepath.Join(t.TempDir(), "demo")
 			vars := DefaultVars("demo", "", lang)
-			if err := New("demo", lang, []string{"dev", "quality", "build", "cicd"}, dir, vars, false); err != nil {
+			if err := New("demo", lang, []string{"dev", "quality", "build", "cicd", "kubernetes"}, dir, vars, false); err != nil {
 				t.Fatalf("New() error = %v", err)
 			}
 			for _, f := range append(files, ".pre-commit-config.yaml", ".markdownlint.json", "Makefile") {
@@ -232,8 +234,15 @@ func TestDefaultVars(t *testing.T) {
 	if v["MODULE"] != "demo" {
 		t.Errorf("MODULE = %q, want %q", v["MODULE"], "demo")
 	}
+	if v["IMAGE"] != "demo" {
+		t.Errorf("IMAGE = %q, want %q", v["IMAGE"], "demo")
+	}
 	if v["PROJECT"] != "demo" || v["LANG"] != "go" || v["YEAR"] == "" {
 		t.Errorf("DefaultVars() = %v", v)
+	}
+	v = DefaultVars("demo", "github.com/me/demo", "go")
+	if v["IMAGE"] != "ghcr.io/me/demo" {
+		t.Errorf("IMAGE = %q, want %q", v["IMAGE"], "ghcr.io/me/demo")
 	}
 }
 

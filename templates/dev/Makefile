@@ -1,7 +1,8 @@
-.PHONY: setup run test lint build clean docker-up docker-down docker-build lint-report
+.PHONY: setup run test lint build clean docker-up docker-down docker-build k8s-deploy k8s-destroy
 
 PROJECT ?= {{PROJECT}}
 DOCKER_IMAGE ?= $(PROJECT):latest
+KUSTOMIZE_ENV ?= dev
 
 -include Makefile.lang
 
@@ -24,9 +25,6 @@ test:
 lint:
 	$(LINT_CMD)
 
-lint-report:
-	./scripts/lint-report.sh
-
 build:
 	$(BUILD_CMD)
 
@@ -41,3 +39,9 @@ docker-down:
 
 docker-build:
 	docker build -t $(DOCKER_IMAGE) .
+
+k8s-deploy:
+	kubectl apply -k deployments/overlays/$(KUSTOMIZE_ENV)
+
+k8s-destroy:
+	kubectl delete -k deployments/overlays/$(KUSTOMIZE_ENV)

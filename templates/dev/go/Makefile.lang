@@ -5,6 +5,9 @@ LINT_CMD = golangci-lint run ./...
 BUILD_CMD = go build -o bin/{{PROJECT}} ./cmd/{{PROJECT}}
 CLEAN_CMD = rm -rf bin coverage.out
 
-.PHONY: release
+.PHONY: release lint-report
 release:
 	goreleaser release --snapshot --clean
+
+lint-report:
+	./scripts/lint-report.sh

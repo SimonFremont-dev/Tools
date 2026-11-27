@@ -15,12 +15,13 @@ for the layout rules and placeholders.
   root, Go release config (`.goreleaser.yaml`)
 - `cicd/` — GitHub Actions (`ci` via mise+make, `docker` build/push to ghcr,
   go-only `release` via goreleaser), Dependabot per language, PR/issue templates
-- `kubernetes/` — manifests / Helm chart, secrets, Skaffold (P6)
+- `kubernetes/` — kustomize base + dev/staging/prod overlays under `deployments/`,
+  root `skaffold.yaml`, secrets guidance in `deployments/README.md`
 - `ai/` — agent instructions and per-language skills copied into generated projects (P7)
 - `docs/` — README / CONTRIBUTING / ADR templates for generated projects (P8)
 
 Scaffold a project with the CLI:
 
 ```sh
-tools new myapp --lang go --stages dev,quality,build,cicd
+tools new myapp --lang go --stages dev,quality,build,cicd,kubernetes
 ```
