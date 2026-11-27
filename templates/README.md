@@ -13,8 +13,11 @@ for the layout rules and placeholders.
   health summary via `make lint-report`), eslint/prettier/commitlint, ruff/mypy
 - `build/` — per-language multi-stage `Dockerfile` + `.dockerignore` at the project
   root, Go release config (`.goreleaser.yaml`)
-- `cicd/` — GitHub Actions (`ci` via mise+make, `docker` build/push to ghcr,
-  go-only `release` via goreleaser), Dependabot per language, PR/issue templates
+- `cicd/` — standardized pipeline: `ci.yml` with 6 merge gates (pre-checks,
+  format, lint, security, test, build — all via make targets), `docker.yml`
+  (publish to ghcr), `cd.yml` (validate + deploy staging), go-only `release.yml`
+  (goreleaser), `PIPELINE.md` documenting the gates, Dependabot per language,
+  PR/issue templates
 - `kubernetes/` — kustomize base + dev/staging/prod overlays under `deployments/`,
   root `skaffold.yaml`, secrets guidance in `deployments/README.md`
 - `ai/` — agent instructions and per-language skills copied into generated projects (P7)

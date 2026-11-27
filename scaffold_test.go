@@ -131,9 +131,9 @@ func TestApply(t *testing.T) {
 
 func TestNewWithDevAndQualityStages(t *testing.T) {
 	langFiles := map[string][]string{
-		"go":     {"Makefile.lang", ".tool-versions", ".golangci.yml", "scripts/lint-report.sh", ".goreleaser.yaml", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/docker.yml", ".github/workflows/release.yml", ".github/dependabot.yml", ".github/pull_request_template.md", ".github/ISSUE_TEMPLATE/bug_report.yml", "deployments/kustomization.yaml", "deployments/deployment.yaml", "deployments/service.yaml", "deployments/ingress.yaml", "deployments/hpa.yaml", "deployments/overlays/dev/kustomization.yaml", "deployments/overlays/staging/kustomization.yaml", "deployments/overlays/prod/kustomization.yaml", "skaffold.yaml"},
-		"node":   {"Makefile.lang", ".tool-versions", "eslint.config.js", ".prettierrc", "commitlint.config.js", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/docker.yml", ".github/dependabot.yml", ".github/pull_request_template.md"},
-		"python": {"Makefile.lang", ".tool-versions", "ruff.toml", "mypy.ini", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/docker.yml", ".github/dependabot.yml", ".github/pull_request_template.md"},
+		"go":     {"Makefile.lang", ".tool-versions", ".golangci.yml", "scripts/lint-report.sh", ".goreleaser.yaml", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/cd.yml", ".github/workflows/docker.yml", ".github/workflows/release.yml", ".github/dependabot.yml", ".github/pull_request_template.md", ".github/ISSUE_TEMPLATE/bug_report.yml", "PIPELINE.md", "deployments/kustomization.yaml", "deployments/deployment.yaml", "deployments/service.yaml", "deployments/ingress.yaml", "deployments/hpa.yaml", "deployments/overlays/dev/kustomization.yaml", "deployments/overlays/staging/kustomization.yaml", "deployments/overlays/prod/kustomization.yaml", "skaffold.yaml"},
+		"node":   {"Makefile.lang", ".tool-versions", "eslint.config.js", ".prettierrc", "commitlint.config.js", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/cd.yml", ".github/workflows/docker.yml", ".github/dependabot.yml", ".github/pull_request_template.md", "PIPELINE.md"},
+		"python": {"Makefile.lang", ".tool-versions", "ruff.toml", "mypy.ini", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/cd.yml", ".github/workflows/docker.yml", ".github/dependabot.yml", ".github/pull_request_template.md", "PIPELINE.md"},
 	}
 	for lang, files := range langFiles {
 		t.Run(lang, func(t *testing.T) {
@@ -153,6 +153,29 @@ func TestNewWithDevAndQualityStages(t *testing.T) {
 			}
 			if placeholderRe.MatchString(string(data)) {
 				t.Errorf("lang %s: Makefile.lang has unresolved placeholders: %q", lang, data)
+			}
+			for _, cmd := range []string{"FMT_CMD", "FMT_CHECK_CMD", "SECURITY_CMD"} {
+				if !strings.Contains(string(data), cmd+" =") {
+					t.Errorf("lang %s: Makefile.lang missing %s", lang, cmd)
+				}
+			}
+			mk, err := os.ReadFile(filepath.Join(dir, "Makefile"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, target := range []string{"fmt-check:", "security:", "lint:", "test:", "build:"} {
+				if !strings.Contains(string(mk), target) {
+					t.Errorf("lang %s: Makefile missing target %q", lang, target)
+				}
+			}
+			ci, err := os.ReadFile(filepath.Join(dir, ".github", "workflows", "ci.yml"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, job := range []string{"pre-checks:", "format:", "lint:", "security:", "test:", "build:"} {
+				if !strings.Contains(string(ci), job) {
+					t.Errorf("lang %s: ci.yml missing gate job %q", lang, job)
+				}
 			}
 			if lang == "go" && !strings.Contains(string(data), "demo") {
 				t.Errorf("lang go: Makefile.lang was not rendered with the project name: %q", data)
