@@ -41,9 +41,20 @@ func Stages() ([]string, error) {
 	return subdirs(templatesRoot)
 }
 
-// Langs lists the languages available for the bootstrap stage.
+// Langs lists the languages available for the bootstrap stage. The "common"
+// directory holds language-independent files and is not a language.
 func Langs() ([]string, error) {
-	return subdirs(templatesRoot + "/bootstrap")
+	dirs, err := subdirs(templatesRoot + "/bootstrap")
+	if err != nil {
+		return nil, err
+	}
+	langs := make([]string, 0, len(dirs))
+	for _, d := range dirs {
+		if d != "common" {
+			langs = append(langs, d)
+		}
+	}
+	return langs, nil
 }
 
 // New scaffolds a new project: the bootstrap template for lang plus any
@@ -96,23 +107,37 @@ func Render(s string, vars Vars) (string, error) {
 
 func copyStage(stage, lang, dir string, vars Vars, force bool) error {
 	if stage == "bootstrap" {
+		common := templatesRoot + "/bootstrap/common"
+		if _, err := templatesFS.ReadDir(common); err == nil {
+			if err := copyTree(common, dir, vars, force, nil); err != nil {
+				return err
+			}
+		}
 		base := templatesRoot + "/bootstrap/" + lang
 		if _, err := templatesFS.ReadDir(base); err != nil {
 			return fmt.Errorf("tools: unknown language %q for stage %q", lang, stage)
 		}
-		return copyTree(base, dir, vars, force)
+		return copyTree(base, dir, vars, force, nil)
 	}
 	base := templatesRoot + "/" + stage
 	if _, err := templatesFS.ReadDir(base); err != nil {
 		return fmt.Errorf("tools: unknown stage %q", stage)
 	}
-	if err := copyTree(base, dir, vars, force); err != nil {
+	langs, err := Langs()
+	if err != nil {
+		return err
+	}
+	skip := map[string]bool{}
+	for _, l := range langs {
+		skip[l] = true
+	}
+	if err := copyTree(base, dir, vars, force, skip); err != nil {
 		return err
 	}
 	if lang != "" {
 		overlay := base + "/" + lang
 		if _, err := templatesFS.ReadDir(overlay); err == nil {
-			if err := copyTree(overlay, dir, vars, force); err != nil {
+			if err := copyTree(overlay, dir, vars, force, nil); err != nil {
 				return err
 			}
 		}
@@ -120,10 +145,13 @@ func copyStage(stage, lang, dir string, vars Vars, force bool) error {
 	return nil
 }
 
-func copyTree(base, dir string, vars Vars, force bool) error {
+func copyTree(base, dir string, vars Vars, force bool, skipLangs map[string]bool) error {
 	return fs.WalkDir(templatesFS, base, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
+		}
+		if d.IsDir() && path != base && skipLangs[d.Name()] {
+			return fs.SkipDir
 		}
 		rel, err := filepath.Rel(base, path)
 		if err != nil {

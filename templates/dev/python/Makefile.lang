@@ -1,0 +1,6 @@
+SETUP_CMD = python -m venv .venv && . .venv/bin/activate && pip install -e .
+RUN_CMD = python main.py
+TEST_CMD = python -m pytest
+LINT_CMD = ruff check . && mypy .
+BUILD_CMD = python -m build
+CLEAN_CMD = rm -rf dist build *.egg-info

@@ -1,0 +1,6 @@
+SETUP_CMD = go mod download
+RUN_CMD = go run ./cmd/{{PROJECT}}
+TEST_CMD = go test ./...
+LINT_CMD = golangci-lint run ./...
+BUILD_CMD = go build -o bin/{{PROJECT}} ./cmd/{{PROJECT}}
+CLEAN_CMD = rm -rf bin coverage.out

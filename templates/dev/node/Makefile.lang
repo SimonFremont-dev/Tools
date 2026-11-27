@@ -1,0 +1,6 @@
+SETUP_CMD = npm install
+RUN_CMD = npm start
+TEST_CMD = npm test
+LINT_CMD = npx eslint . && npx prettier --check .
+BUILD_CMD = npm run build
+CLEAN_CMD = rm -rf dist

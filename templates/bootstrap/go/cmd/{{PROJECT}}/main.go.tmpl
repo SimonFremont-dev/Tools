@@ -1,7 +1,13 @@
 package main
 
-import "fmt"
+import (
+	"log"
+
+	"{{MODULE}}/internal/app"
+)
 
 func main() {
-	fmt.Println("Hello from {{PROJECT}}!")
+	if err := app.Run(); err != nil {
+		log.Fatal(err)
+	}
 }

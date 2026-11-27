@@ -25,6 +25,9 @@ func TestStagesAndLangs(t *testing.T) {
 			t.Errorf("Langs() = %v, missing %s", langs, want)
 		}
 	}
+	if contains(langs, "common") {
+		t.Errorf("Langs() = %v, must not list the common directory", langs)
+	}
 }
 
 func TestNew(t *testing.T) {
@@ -50,7 +53,7 @@ func TestNew(t *testing.T) {
 		t.Errorf("main.go still contains placeholders: %q", data)
 	}
 
-	for _, f := range []string{"Makefile", ".env.example", "docker-compose.yml", ".gitignore", ".editorconfig", "README.md"} {
+	for _, f := range []string{"Makefile", ".env.example", "docker-compose.yml", ".gitignore", ".editorconfig", ".gitattributes", "LICENSE", "README.md"} {
 		if _, err := os.Stat(filepath.Join(dir, f)); err != nil {
 			t.Errorf("expected %s in scaffolded project: %v", f, err)
 		}
@@ -121,6 +124,43 @@ func TestApply(t *testing.T) {
 	}
 	if err := Apply("bootstrap", "go", dir, vars, false); err == nil {
 		t.Error("Apply(bootstrap): want an error, got nil")
+	}
+}
+
+func TestNewWithDevAndQualityStages(t *testing.T) {
+	langFiles := map[string][]string{
+		"go":     {"Makefile.lang", ".tool-versions", ".golangci.yml"},
+		"node":   {"Makefile.lang", ".tool-versions", "eslint.config.js", ".prettierrc", "commitlint.config.js"},
+		"python": {"Makefile.lang", ".tool-versions", "ruff.toml", "mypy.ini"},
+	}
+	for lang, files := range langFiles {
+		t.Run(lang, func(t *testing.T) {
+			dir := filepath.Join(t.TempDir(), "demo")
+			vars := DefaultVars("demo", "", lang)
+			if err := New("demo", lang, []string{"dev", "quality"}, dir, vars, false); err != nil {
+				t.Fatalf("New() error = %v", err)
+			}
+			for _, f := range append(files, ".pre-commit-config.yaml", ".markdownlint.json", "Makefile") {
+				if _, err := os.Stat(filepath.Join(dir, f)); err != nil {
+					t.Errorf("lang %s: expected %s: %v", lang, f, err)
+				}
+			}
+			data, err := os.ReadFile(filepath.Join(dir, "Makefile.lang"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if strings.Contains(string(data), "{{") {
+				t.Errorf("lang %s: Makefile.lang has unresolved placeholders: %q", lang, data)
+			}
+			if lang == "go" && !strings.Contains(string(data), "demo") {
+				t.Errorf("lang go: Makefile.lang was not rendered with the project name: %q", data)
+			}
+			for _, other := range []string{"go", "node", "python"} {
+				if _, err := os.Stat(filepath.Join(dir, other)); err == nil {
+					t.Errorf("lang %s: stage language directories must not be copied verbatim (found %s/)", lang, other)
+				}
+			}
+		})
 	}
 }
 

@@ -17,6 +17,7 @@ the Tools repository first.
 ## Todo list (prioritized, execute in order)
 
 1. Bootstrap the project: `tools new {{PROJECT}} --lang {{LANGUAGE}} --module {{MODULE}} --stages dev --git`.
+   Go projects follow the Standard Go Project Layout (`cmd/`, `internal/`, `pkg/`, ...).
 2. Fill in the local dev environment from `templates/dev` (Makefile targets for `{{LANGUAGE}}`, `.env.example`, `docker-compose.yml` for `{{DATABASE}}`).
 3. Add quality tooling for `{{LANGUAGE}}` from `templates/quality`.
 4. Add build, release and container files from `templates/build` (multi-stage Dockerfile, `.dockerignore`, release config).
