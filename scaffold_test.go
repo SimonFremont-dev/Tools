@@ -13,7 +13,7 @@ func TestStagesAndLangs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"bootstrap", "dev", "quality", "build", "cicd", "kubernetes"} {
+	for _, want := range []string{"bootstrap", "dev", "quality", "build", "cicd", "kubernetes", "ai"} {
 		if !contains(stages, want) {
 			t.Errorf("Stages() = %v, missing %s", stages, want)
 		}
@@ -131,15 +131,15 @@ func TestApply(t *testing.T) {
 
 func TestNewWithDevAndQualityStages(t *testing.T) {
 	langFiles := map[string][]string{
-		"go":     {"Makefile.lang", ".tool-versions", ".golangci.yml", "scripts/lint-report.sh", ".goreleaser.yaml", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/cd.yml", ".github/workflows/docker.yml", ".github/workflows/release.yml", ".github/dependabot.yml", ".github/pull_request_template.md", ".github/ISSUE_TEMPLATE/bug_report.yml", "PIPELINE.md", "deployments/kustomization.yaml", "deployments/deployment.yaml", "deployments/service.yaml", "deployments/ingress.yaml", "deployments/hpa.yaml", "deployments/overlays/dev/kustomization.yaml", "deployments/overlays/staging/kustomization.yaml", "deployments/overlays/prod/kustomization.yaml", "skaffold.yaml"},
-		"node":   {"Makefile.lang", ".tool-versions", "eslint.config.js", ".prettierrc", "commitlint.config.js", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/cd.yml", ".github/workflows/docker.yml", ".github/dependabot.yml", ".github/pull_request_template.md", "PIPELINE.md"},
-		"python": {"Makefile.lang", ".tool-versions", "ruff.toml", "mypy.ini", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/cd.yml", ".github/workflows/docker.yml", ".github/dependabot.yml", ".github/pull_request_template.md", "PIPELINE.md"},
+		"go":     {"Makefile.lang", ".tool-versions", ".golangci.yml", "scripts/lint-report.sh", ".goreleaser.yaml", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/cd.yml", ".github/workflows/docker.yml", ".github/workflows/release.yml", ".github/dependabot.yml", ".github/pull_request_template.md", ".github/ISSUE_TEMPLATE/bug_report.yml", "PIPELINE.md", "deployments/kustomization.yaml", "deployments/deployment.yaml", "deployments/service.yaml", "deployments/ingress.yaml", "deployments/hpa.yaml", "deployments/overlays/dev/kustomization.yaml", "deployments/overlays/staging/kustomization.yaml", "deployments/overlays/prod/kustomization.yaml", "skaffold.yaml", "AGENTS.md", ".skills/project-spec/SKILL.md", ".skills/go/SKILL.md"},
+		"node":   {"Makefile.lang", ".tool-versions", "eslint.config.js", ".prettierrc", "commitlint.config.js", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/cd.yml", ".github/workflows/docker.yml", ".github/dependabot.yml", ".github/pull_request_template.md", "PIPELINE.md", "AGENTS.md", ".skills/project-spec/SKILL.md"},
+		"python": {"Makefile.lang", ".tool-versions", "ruff.toml", "mypy.ini", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/cd.yml", ".github/workflows/docker.yml", ".github/dependabot.yml", ".github/pull_request_template.md", "PIPELINE.md", "AGENTS.md", ".skills/project-spec/SKILL.md"},
 	}
 	for lang, files := range langFiles {
 		t.Run(lang, func(t *testing.T) {
 			dir := filepath.Join(t.TempDir(), "demo")
 			vars := DefaultVars("demo", "", lang)
-			if err := New("demo", lang, []string{"dev", "quality", "build", "cicd", "kubernetes"}, dir, vars, false); err != nil {
+			if err := New("demo", lang, []string{"dev", "quality", "build", "cicd", "kubernetes", "ai"}, dir, vars, false); err != nil {
 				t.Fatalf("New() error = %v", err)
 			}
 			for _, f := range append(files, ".pre-commit-config.yaml", ".markdownlint.json", "Makefile") {
@@ -203,6 +203,14 @@ func TestNewWithDevAndQualityStages(t *testing.T) {
 				if _, err := os.Stat(filepath.Join(dir, other)); err == nil {
 					t.Errorf("lang %s: stage language directories must not be copied verbatim (found %s/)", lang, other)
 				}
+			}
+			goSkill := filepath.Join(dir, ".skills", "go", "SKILL.md")
+			if lang == "go" {
+				if _, err := os.Stat(goSkill); err != nil {
+					t.Errorf("lang go: expected the go skill at %s: %v", goSkill, err)
+				}
+			} else if _, err := os.Stat(goSkill); err == nil {
+				t.Errorf("lang %s: .skills/go must only be scaffolded for go projects", lang)
 			}
 		})
 	}

@@ -20,11 +20,13 @@ for the layout rules and placeholders.
   PR/issue templates
 - `kubernetes/` — kustomize base + dev/staging/prod overlays under `deployments/`,
   root `skaffold.yaml`, secrets guidance in `deployments/README.md`
-- `ai/` — agent instructions and per-language skills copied into generated projects (P7)
+- `ai/` — `AGENTS.md` + `.skills/project-spec` (interactive spec Q&A, scaffolds
+  via the CLI, alerts on tools without conventions in Tools) + per-language
+  skills (e.g. go)
 - `docs/` — README / CONTRIBUTING / ADR templates for generated projects (P8)
 
 Scaffold a project with the CLI:
 
 ```sh
-tools new myapp --lang go --stages dev,quality,build,cicd,kubernetes
+tools new myapp --lang go --stages dev,quality,build,cicd,kubernetes,ai
 ```

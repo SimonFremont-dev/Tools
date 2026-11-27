@@ -157,7 +157,7 @@ func copyTree(base, dir string, vars Vars, force bool, skipLangs map[string]bool
 		if err != nil {
 			return err
 		}
-		if d.IsDir() && path != base && skipLangs[d.Name()] {
+		if d.IsDir() && skipLangs[d.Name()] && path == base+"/"+d.Name() {
 			return fs.SkipDir
 		}
 		rel, err := filepath.Rel(base, path)

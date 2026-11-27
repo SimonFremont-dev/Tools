@@ -14,6 +14,10 @@ the Tools repository first.
 - CI/CD provider: `{{CICD}}` (`github-actions` | `gitlab-ci`)
 - Deployment target: `{{DEPLOY_TARGET}}` (`none` | `docker-compose` | `kubernetes`)
 
+Alternatively, hand this file to an agent that has the `project-spec` skill
+(`templates/ai/.skills/project-spec`) — it asks the questions itself, applies
+the stages, and alerts on tools missing from the Tools templates.
+
 ## Todo list (prioritized, execute in order)
 
 1. Bootstrap the project: `tools new {{PROJECT}} --lang {{LANGUAGE}} --module {{MODULE}} --stages dev --git`.
