@@ -23,5 +23,5 @@ gofmt -l .        # must be empty
 go vet ./...
 go test ./...
 go run ./cmd/tools list
-go run ./cmd/tools new demo --lang go --module github.com/me/demo --stages dev,quality,build,cicd,kubernetes,ai --dir /tmp/tools-smoke
+go run ./cmd/tools new demo --lang go --db postgres --module github.com/me/demo --stages dev,quality,build,cicd,kubernetes,ai,docs,database --dir /tmp/tools-smoke
 ```

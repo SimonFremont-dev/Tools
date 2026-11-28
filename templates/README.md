@@ -26,10 +26,12 @@ for the layout rules and placeholders.
   tool-agnostic, linkable to any project's skill set) + per-language skills
   (e.g. `go`)
 - `docs/` — `docs/` index + `spec.md` (project spec), ADR template, runbook,
-  and a generated-project `CONTRIBUTING.md`
+  `git-workflow.md` (conventional commits + branches), and a generated-project `CONTRIBUTING.md`
+- `database/` — Atlas schema management: `migrations/` + README, `atlas.hcl`
+  per engine overlay (`postgres`, `mysql`, `sqlite`), `make db-*` targets
 
 Scaffold a project with the CLI:
 
 ```sh
-tools new myapp --lang go --stages dev,quality,build,cicd,kubernetes,ai,docs
+tools new myapp --lang go --db postgres --stages dev,quality,build,cicd,kubernetes,ai,docs,database
 ```

@@ -5,6 +5,10 @@
 - `templates/<stage>/` — files copied into a generated project for that stage.
   Stages: `bootstrap`, `dev`, `quality`, `build`, `cicd`, `kubernetes`, `ai`, `docs`.
 - `templates/<stage>/<lang>/` — optional language overlay, merged over `templates/<stage>/`.
+- `templates/database/<db>/` — database overlay (`postgres`, `mysql`, `sqlite`),
+  merged like a language overlay when `--db` is set. In general, top-level
+  subdirectories of a stage named after a language or a database are overlays,
+  never content.
 - `templates/bootstrap/common/` — language-independent bootstrap files (LICENSE,
   .gitattributes, .editorconfig), merged before `bootstrap/<lang>/`; not listed as a language.
 - `prompts/` — prompt templates given to an AI agent; they are not copied into projects.
@@ -20,6 +24,7 @@ Rendered by the scaffold engine (`scaffold.go`) before files are written:
 - `{{YEAR}}` — current year
 - `{{IMAGE}}` — container image reference: `ghcr.io/<owner>/<repo>` when
   `{{MODULE}}` is a `github.com/...` path, else the project name
+- `{{DB}}` — database engine (`postgres` | `mysql` | `sqlite`, default `postgres`)
 
 Placeholders also work in file and directory names, e.g. `cmd/{{PROJECT}}/main.go`.
 
@@ -31,7 +36,7 @@ Placeholders also work in file and directory names, e.g. `cmd/{{PROJECT}}/main.g
 - A template file ending in `.tmpl` is written without the suffix. Use it
   for files this module's own Go tooling must not pick up (a template
   `go.mod`, template `*.go` sources).
-- Template `*.sh` files are written executable (0755).
+- Template `*.sh` files and anything under `githooks/` are written executable (0755).
 - Generated projects must be standalone: do not make them import this module.
 - Go templates follow the [Standard Go Project Layout](https://github.com/golang-standards/project-layout):
   `cmd/`, `internal/`, `pkg/`, `api/`, `configs/`, `build/`, `deployments/`, `scripts/`,

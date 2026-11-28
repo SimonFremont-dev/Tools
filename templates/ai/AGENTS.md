@@ -21,6 +21,8 @@ This project was scaffolded from the Tools library
     with the `tools` CLI, alert on tools that have no conventions in the Tools repo
   - `tdd`, `clean-code`, `clean-architecture` — practice skills (linkable to any
     project; prune the ones this project does not follow)
+  - `sql-migrations` (Atlas: migrations/ + atlas.sum, atlas.hcl) and
+    `git-conventions` (conventional commits + conventional branch names)
   - language skill: `{{LANG}}` (if present)
 - Re-apply a stage: `tools apply <stage> --lang {{LANG}} --dir . [--force]`
   (build the CLI from the Tools repo: `go build -o bin/tools ./cmd/tools`).

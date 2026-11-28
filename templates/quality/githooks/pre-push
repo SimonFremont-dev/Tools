@@ -1,0 +1,5 @@
+#!/bin/sh
+# pre-push hook: enforce conventional branch names (https://conventionalbranch.org/).
+# Install with: git config core.hooksPath githooks   (or: make hooks)
+set -eu
+"$(git rev-parse --show-toplevel)/scripts/check-branch-name.sh"

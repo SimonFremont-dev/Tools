@@ -15,5 +15,15 @@ services:
     ports:
       - "6379:6379"
 
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_DATABASE: {{PROJECT}}
+      MYSQL_USER: dev
+      MYSQL_PASSWORD: dev
+      MYSQL_ROOT_PASSWORD: dev
+    ports:
+      - "3306:3306"
+
 volumes:
   postgres_data:

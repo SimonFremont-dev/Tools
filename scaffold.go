@@ -50,9 +50,13 @@ type Vars map[string]string
 // to the project name when empty. IMAGE is the container image reference:
 // ghcr.io/<owner>/<repo> when module is a github.com path, else the project
 // name (for local builds).
-func DefaultVars(project, module, lang string) Vars {
+func DefaultVars(project, module, lang, database string) Vars {
 	if module == "" {
 		module = project
+	}
+
+	if database == "" {
+		database = "postgres"
 	}
 
 	image := project
@@ -65,6 +69,7 @@ func DefaultVars(project, module, lang string) Vars {
 		"PROJECT": project,
 		"MODULE":  module,
 		"LANG":    lang,
+		"DB":      database,
 		"YEAR":    strconv.Itoa(time.Now().Year()),
 		"IMAGE":   image,
 	}
@@ -94,10 +99,41 @@ func Langs() ([]string, error) {
 	return langs, nil
 }
 
+// DBs lists the databases available as overlays of the database stage: the
+// top-level subdirectories of templates/database that contain an atlas.hcl.
+// It returns nil when the stage does not exist.
+func DBs() ([]string, error) {
+	root := templatesRoot + "/database"
+
+	dirs, err := subdirs(root)
+	if err != nil {
+		return nil, nil //nolint:nilerr // no database stage means no overlays
+	}
+
+	var dbs []string
+
+	for _, name := range dirs {
+		entries, err := templatesFS.ReadDir(root + "/" + name)
+		if err != nil {
+			continue
+		}
+
+		for _, e := range entries {
+			if e.Name() == "atlas.hcl" {
+				dbs = append(dbs, name)
+
+				break
+			}
+		}
+	}
+
+	return dbs, nil
+}
+
 // New scaffolds a new project: the bootstrap template for lang plus any
 // extra stages, rendered into dir (default: ./<project>). It refuses to
 // write into a non-empty directory unless force is true.
-func New(project, lang string, stages []string, dir string, vars Vars, force bool) error {
+func New(project, lang, database string, stages []string, dir string, vars Vars, force bool) error {
 	if dir == "" {
 		dir = project
 	}
@@ -116,7 +152,7 @@ func New(project, lang string, stages []string, dir string, vars Vars, force boo
 	}
 
 	for _, stage := range all {
-		err = copyStage(stage, lang, dir, vars, force)
+		err = copyStage(stage, lang, database, dir, vars, force)
 		if err != nil {
 			return err
 		}
@@ -127,12 +163,12 @@ func New(project, lang string, stages []string, dir string, vars Vars, force boo
 
 // Apply renders a single stage into an existing project directory. The
 // bootstrap stage is only available through New.
-func Apply(stage, lang, dir string, vars Vars, force bool) error {
+func Apply(stage, lang, database, dir string, vars Vars, force bool) error {
 	if stage == stageBootstrap {
 		return ErrBootstrapViaNew
 	}
 
-	return copyStage(stage, lang, dir, vars, force)
+	return copyStage(stage, lang, database, dir, vars, force)
 }
 
 // Render replaces every {{KEY}} in s with vars[KEY]. It returns an error if
@@ -153,12 +189,12 @@ func Render(s string, vars Vars) (string, error) {
 	return out, nil
 }
 
-func copyStage(stage, lang, dir string, vars Vars, force bool) error {
+func copyStage(stage, lang, database, dir string, vars Vars, force bool) error {
 	if stage == stageBootstrap {
 		return copyBootstrap(lang, dir, vars, force)
 	}
 
-	return copyOtherStage(stage, lang, dir, vars, force)
+	return copyOtherStage(stage, lang, database, dir, vars, force)
 }
 
 func copyBootstrap(lang, dir string, vars Vars, force bool) error {
@@ -182,7 +218,7 @@ func copyBootstrap(lang, dir string, vars Vars, force bool) error {
 	return copyTree(base, dir, vars, force, nil)
 }
 
-func copyOtherStage(stage, lang, dir string, vars Vars, force bool) error {
+func copyOtherStage(stage, lang, database, dir string, vars Vars, force bool) error {
 	base := templatesRoot + "/" + stage
 
 	_, err := templatesFS.ReadDir(base)
@@ -190,7 +226,7 @@ func copyOtherStage(stage, lang, dir string, vars Vars, force bool) error {
 		return fmt.Errorf("%w %q", ErrUnknownStage, stage)
 	}
 
-	skip, err := langDirs()
+	skip, err := overlayDirs()
 	if err != nil {
 		return err
 	}
@@ -200,33 +236,46 @@ func copyOtherStage(stage, lang, dir string, vars Vars, force bool) error {
 		return err
 	}
 
-	if lang == "" {
-		return nil
-	}
+	for _, ov := range []string{lang, database} {
+		if ov == "" {
+			continue
+		}
 
-	overlay := base + "/" + lang
+		overlay := base + "/" + ov
 
-	_, overlayErr := templatesFS.ReadDir(overlay)
-	if overlayErr == nil {
-		err = copyTree(overlay, dir, vars, force, nil)
-		if err != nil {
-			return err
+		_, overlayErr := templatesFS.ReadDir(overlay)
+		if overlayErr == nil {
+			err = copyTree(overlay, dir, vars, force, nil)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
 	return nil
 }
 
-func langDirs() (map[string]bool, error) {
+// overlayDirs returns the top-level stage subdirectories that are overlays
+// (languages and databases) rather than content.
+func overlayDirs() (map[string]bool, error) {
 	langs, err := Langs()
 	if err != nil {
 		return nil, err
 	}
 
-	skip := make(map[string]bool, len(langs))
+	dbs, err := DBs()
+	if err != nil {
+		return nil, err
+	}
+
+	skip := make(map[string]bool, len(langs)+len(dbs))
 
 	for _, l := range langs {
 		skip[l] = true
+	}
+
+	for _, d := range dbs {
+		skip[d] = true
 	}
 
 	return skip, nil
@@ -304,7 +353,7 @@ func makeDir(target string) error {
 }
 
 func filePerm(name string) fs.FileMode {
-	if strings.HasSuffix(name, ".sh") {
+	if strings.HasSuffix(name, ".sh") || strings.Contains(name, "/githooks/") || strings.HasPrefix(name, "githooks/") {
 		return execPerm
 	}
 

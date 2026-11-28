@@ -1,4 +1,4 @@
-.PHONY: setup run test lint fmt fmt-check security build clean docker-up docker-down docker-build k8s-deploy k8s-destroy
+.PHONY: setup run test lint fmt fmt-check security build clean docker-up docker-down docker-build k8s-deploy k8s-destroy hooks db-lint db-new db-apply db-status
 
 PROJECT ?= {{PROJECT}}
 DOCKER_IMAGE ?= $(PROJECT):latest
@@ -57,3 +57,18 @@ k8s-deploy:
 
 k8s-destroy:
 	kubectl delete -k deployments/overlays/$(KUSTOMIZE_ENV)
+
+hooks:
+	git config core.hooksPath githooks
+
+db-lint:
+	atlas migrate lint --env dev
+
+db-new:
+	atlas migrate new $(name)
+
+db-apply:
+	atlas migrate apply --env dev
+
+db-status:
+	atlas migrate status --env dev

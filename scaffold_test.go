@@ -15,7 +15,7 @@ func TestStagesAndLangs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, want := range []string{"bootstrap", "dev", "quality", "build", "cicd", "kubernetes", "ai", "docs"} {
+	for _, want := range []string{"bootstrap", "dev", "quality", "build", "cicd", "kubernetes", "ai", "docs", "database"} {
 		if !contains(stages, want) {
 			t.Errorf("Stages() = %v, missing %s", stages, want)
 		}
@@ -40,9 +40,9 @@ func TestStagesAndLangs(t *testing.T) {
 func TestNew(t *testing.T) {
 	dir := filepath.Join(t.TempDir(), "demo")
 
-	vars := DefaultVars("demo", "github.com/me/demo", "go")
+	vars := DefaultVars("demo", "github.com/me/demo", "go", "postgres")
 
-	if err := New("demo", "go", []string{"dev"}, dir, vars, false); err != nil {
+	if err := New("demo", "go", "postgres", []string{"dev"}, dir, vars, false); err != nil {
 		t.Fatalf("New() error = %v", err)
 	}
 
@@ -104,13 +104,13 @@ func TestNewNonEmptyDir(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	vars := DefaultVars("demo", "", "go")
-	err = New("demo", "go", nil, dir, vars, false)
+	vars := DefaultVars("demo", "", "go", "postgres")
+	err = New("demo", "go", "postgres", nil, dir, vars, false)
 	if err == nil {
 		t.Error("New() into a non-empty dir: want an error, got nil")
 	}
 
-	err = New("demo", "go", nil, dir, vars, true)
+	err = New("demo", "go", "postgres", nil, dir, vars, true)
 
 	if err != nil {
 		t.Errorf("New() with force: error = %v", err)
@@ -120,13 +120,13 @@ func TestNewNonEmptyDir(t *testing.T) {
 func TestApply(t *testing.T) {
 	dir := t.TempDir()
 
-	vars := DefaultVars("demo", "", "go")
+	vars := DefaultVars("demo", "", "go", "postgres")
 
-	if err := New("demo", "go", nil, dir, vars, false); err != nil {
+	if err := New("demo", "go", "postgres", nil, dir, vars, false); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := Apply("dev", "go", dir, vars, false); err != nil {
+	if err := Apply("dev", "go", "postgres", dir, vars, false); err != nil {
 		t.Fatalf("Apply(dev) error = %v", err)
 	}
 
@@ -138,11 +138,11 @@ func TestApply(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := Apply("dev", "go", dir, vars, false); err == nil {
+	if err := Apply("dev", "go", "postgres", dir, vars, false); err == nil {
 		t.Error("Apply() over an existing file without force: want an error, got nil")
 	}
 
-	if err := Apply("dev", "go", dir, vars, true); err != nil {
+	if err := Apply("dev", "go", "postgres", dir, vars, true); err != nil {
 		t.Errorf("Apply() with force: error = %v", err)
 	}
 
@@ -151,24 +151,24 @@ func TestApply(t *testing.T) {
 		t.Errorf("Apply() with force did not overwrite Makefile: %q, %v", data, err)
 	}
 
-	if err := Apply("bootstrap", "go", dir, vars, false); err == nil {
+	if err := Apply("bootstrap", "go", "postgres", dir, vars, false); err == nil {
 		t.Error("Apply(bootstrap): want an error, got nil")
 	}
 }
 
 func TestNewWithDevAndQualityStages(t *testing.T) {
 	langFiles := map[string][]string{
-		"go":     {"Makefile.lang", ".tool-versions", ".golangci.yml", "scripts/lint-report.sh", ".goreleaser.yaml", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/cd.yml", ".github/workflows/docker.yml", ".github/workflows/release.yml", ".github/dependabot.yml", ".github/pull_request_template.md", ".github/ISSUE_TEMPLATE/bug_report.yml", "PIPELINE.md", "deployments/kustomization.yaml", "deployments/deployment.yaml", "deployments/service.yaml", "deployments/ingress.yaml", "deployments/hpa.yaml", "deployments/overlays/dev/kustomization.yaml", "deployments/overlays/staging/kustomization.yaml", "deployments/overlays/prod/kustomization.yaml", "skaffold.yaml", "AGENTS.md", ".skills/project-spec/SKILL.md", ".skills/go/SKILL.md", ".skills/tdd/SKILL.md", ".skills/clean-code/SKILL.md", ".skills/clean-architecture/SKILL.md", "docs/README.md", "docs/spec.md", "docs/adr/0000-template.md", "docs/runbook.md", "CONTRIBUTING.md"},
-		"node":   {"Makefile.lang", ".tool-versions", "eslint.config.js", ".prettierrc", "commitlint.config.js", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/cd.yml", ".github/workflows/docker.yml", ".github/dependabot.yml", ".github/pull_request_template.md", "PIPELINE.md", "AGENTS.md", ".skills/project-spec/SKILL.md", ".skills/tdd/SKILL.md", ".skills/clean-code/SKILL.md", ".skills/clean-architecture/SKILL.md", "docs/README.md", "docs/spec.md", "docs/adr/0000-template.md", "docs/runbook.md", "CONTRIBUTING.md"},
-		"python": {"Makefile.lang", ".tool-versions", "ruff.toml", "mypy.ini", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/cd.yml", ".github/workflows/docker.yml", ".github/dependabot.yml", ".github/pull_request_template.md", "PIPELINE.md", "AGENTS.md", ".skills/project-spec/SKILL.md", ".skills/tdd/SKILL.md", ".skills/clean-code/SKILL.md", ".skills/clean-architecture/SKILL.md", "docs/README.md", "docs/spec.md", "docs/adr/0000-template.md", "docs/runbook.md", "CONTRIBUTING.md"},
+		"go":     {"Makefile.lang", ".tool-versions", ".golangci.yml", "scripts/lint-report.sh", ".goreleaser.yaml", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/cd.yml", ".github/workflows/docker.yml", ".github/workflows/release.yml", ".github/dependabot.yml", ".github/pull_request_template.md", ".github/ISSUE_TEMPLATE/bug_report.yml", "PIPELINE.md", "deployments/kustomization.yaml", "deployments/deployment.yaml", "deployments/service.yaml", "deployments/ingress.yaml", "deployments/hpa.yaml", "deployments/overlays/dev/kustomization.yaml", "deployments/overlays/staging/kustomization.yaml", "deployments/overlays/prod/kustomization.yaml", "skaffold.yaml", "AGENTS.md", ".skills/project-spec/SKILL.md", ".skills/go/SKILL.md", ".skills/tdd/SKILL.md", ".skills/clean-code/SKILL.md", ".skills/clean-architecture/SKILL.md", "docs/README.md", "docs/spec.md", "docs/adr/0000-template.md", "docs/runbook.md", "docs/git-workflow.md", "CONTRIBUTING.md", "atlas.hcl", "migrations/README.md", "scripts/check-branch-name.sh", "githooks/pre-push", ".skills/sql-migrations/SKILL.md", ".skills/git-conventions/SKILL.md"},
+		"node":   {"Makefile.lang", ".tool-versions", "eslint.config.js", ".prettierrc", "commitlint.config.js", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/cd.yml", ".github/workflows/docker.yml", ".github/dependabot.yml", ".github/pull_request_template.md", "PIPELINE.md", "AGENTS.md", ".skills/project-spec/SKILL.md", ".skills/tdd/SKILL.md", ".skills/clean-code/SKILL.md", ".skills/clean-architecture/SKILL.md", "docs/README.md", "docs/spec.md", "docs/adr/0000-template.md", "docs/runbook.md", "docs/git-workflow.md", "CONTRIBUTING.md", "atlas.hcl", "migrations/README.md", "scripts/check-branch-name.sh", "githooks/pre-push", ".skills/sql-migrations/SKILL.md", ".skills/git-conventions/SKILL.md"},
+		"python": {"Makefile.lang", ".tool-versions", "ruff.toml", "mypy.ini", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/cd.yml", ".github/workflows/docker.yml", ".github/dependabot.yml", ".github/pull_request_template.md", "PIPELINE.md", "AGENTS.md", ".skills/project-spec/SKILL.md", ".skills/tdd/SKILL.md", ".skills/clean-code/SKILL.md", ".skills/clean-architecture/SKILL.md", "docs/README.md", "docs/spec.md", "docs/adr/0000-template.md", "docs/runbook.md", "docs/git-workflow.md", "CONTRIBUTING.md", "atlas.hcl", "migrations/README.md", "scripts/check-branch-name.sh", "githooks/pre-push", ".skills/sql-migrations/SKILL.md", ".skills/git-conventions/SKILL.md"},
 	}
 	for lang, files := range langFiles {
 		t.Run(lang, func(t *testing.T) {
 			dir := filepath.Join(t.TempDir(), "demo")
 
-			vars := DefaultVars("demo", "", lang)
+			vars := DefaultVars("demo", "", lang, "postgres")
 
-			if err := New("demo", lang, []string{"dev", "quality", "build", "cicd", "kubernetes", "ai", "docs"}, dir, vars, false); err != nil {
+			if err := New("demo", lang, "postgres", []string{"dev", "quality", "build", "cicd", "kubernetes", "ai", "docs", "database"}, dir, vars, false); err != nil {
 				t.Fatalf("New() error = %v", err)
 			}
 
@@ -243,6 +243,14 @@ func TestNewWithDevAndQualityStages(t *testing.T) {
 				}
 			}
 
+			hook, err := os.Stat(filepath.Join(dir, "githooks", "pre-push"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if hook.Mode().Perm()&0o111 == 0 {
+				t.Errorf("githooks/pre-push lost its executable bit: %v", hook.Mode())
+			}
+
 			for _, other := range []string{"go", "node", "python"} {
 				if _, err := os.Stat(filepath.Join(dir, other)); err == nil {
 					t.Errorf("lang %s: stage language directories must not be copied verbatim (found %s/)", lang, other)
@@ -264,9 +272,9 @@ func TestNewWithDevAndQualityStages(t *testing.T) {
 func TestCicdWorkflowsRender(t *testing.T) {
 	dir := filepath.Join(t.TempDir(), "demo")
 
-	vars := DefaultVars("demo", "github.com/me/demo", "go")
+	vars := DefaultVars("demo", "github.com/me/demo", "go", "postgres")
 
-	if err := New("demo", "go", []string{"cicd"}, dir, vars, false); err != nil {
+	if err := New("demo", "go", "postgres", []string{"cicd"}, dir, vars, false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -281,6 +289,56 @@ func TestCicdWorkflowsRender(t *testing.T) {
 
 	if placeholderRe.Match(wf) {
 		t.Errorf("docker.yml has unresolved placeholders:\n%s", wf)
+	}
+}
+
+func TestDBs(t *testing.T) {
+	dbs, err := DBs()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, want := range []string{"postgres", "mysql", "sqlite"} {
+		if !contains(dbs, want) {
+			t.Errorf("DBs() = %v, missing %s", dbs, want)
+		}
+	}
+}
+
+func TestDatabaseStageOverlay(t *testing.T) {
+	for _, db := range []string{"postgres", "mysql", "sqlite"} {
+		t.Run(db, func(t *testing.T) {
+			dir := filepath.Join(t.TempDir(), "demo")
+			vars := DefaultVars("demo", "", "go", db)
+
+			err := New("demo", "go", db, []string{"database"}, dir, vars, false)
+			if err != nil {
+				t.Fatalf("New() error = %v", err)
+			}
+
+			atlas, err := os.ReadFile(filepath.Join(dir, "atlas.hcl"))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !strings.Contains(string(atlas), db) {
+				t.Errorf("db %s: atlas.hcl does not mention %s:\n%s", db, db, atlas)
+			}
+
+			if _, err := os.Stat(filepath.Join(dir, "migrations", "README.md")); err != nil {
+				t.Errorf("db %s: migrations/README.md missing: %v", db, err)
+			}
+
+			for _, other := range []string{"postgres", "mysql", "sqlite"} {
+				if other == db {
+					continue
+				}
+
+				if _, err := os.Stat(filepath.Join(dir, other)); err == nil {
+					t.Errorf("db %s: overlay directory %q must not be copied verbatim", db, other)
+				}
+			}
+		})
 	}
 }
 
@@ -314,7 +372,7 @@ func TestRender(t *testing.T) {
 }
 
 func TestDefaultVars(t *testing.T) {
-	v := DefaultVars("demo", "", "go")
+	v := DefaultVars("demo", "", "go", "postgres")
 	if v["MODULE"] != "demo" {
 		t.Errorf("MODULE = %q, want %q", v["MODULE"], "demo")
 	}
@@ -327,7 +385,7 @@ func TestDefaultVars(t *testing.T) {
 		t.Errorf("DefaultVars() = %v", v)
 	}
 
-	v = DefaultVars("demo", "github.com/me/demo", "go")
+	v = DefaultVars("demo", "github.com/me/demo", "go", "postgres")
 	if v["IMAGE"] != "ghcr.io/me/demo" {
 		t.Errorf("IMAGE = %q, want %q", v["IMAGE"], "ghcr.io/me/demo")
 	}

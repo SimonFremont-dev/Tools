@@ -12,7 +12,9 @@ Ask the user, batching related questions together:
 - Project name and module/import path (e.g. `github.com/me/myapp`)?
 - Language: `go` | `node` | `python`?
 - Framework and main libraries (e.g. gorilla/mux, express, fastapi)?
-- Data stores and infrastructure dependencies (postgres, redis, kafka, ...)?
+- Database: `postgres` | `mysql` | `sqlite` | `none`? (drives the `--db` flag,
+  the `atlas.hcl` datasource and the `database` stage)
+- Other data stores and infrastructure dependencies (redis, kafka, ...)?
 - CI/CD provider: `github-actions` (default) | `gitlab-ci` | other?
 - Deployment target: `none` | `docker-compose` | `kubernetes`?
 - Which stages to (re)apply: `dev`, `quality`, `build`, `cicd`, `kubernetes`, `ai`, `docs`?
@@ -30,9 +32,9 @@ Tools repo: https://github.com/SimonFremont-dev/Tools (or the local checkout).
 Build the CLI once: `go build -o bin/tools ./cmd/tools` inside the Tools repo.
 
 - New project:
-  `bin/tools new <name> --lang <lang> --module <module> --stages <comma-separated stages> --git`
+  `bin/tools new <name> --lang <lang> --db <db> --module <module> --stages <comma-separated stages> --git`
 - Existing project:
-  `bin/tools apply <stage> --lang <lang> --dir . [--force]`
+  `bin/tools apply <stage> --lang <lang> --db <db> --dir . [--force]`
 
 Then fill in what templates cannot know: framework wiring, business code,
 real `.env` values, the deploy step in `cd.yml`, the ingress host.

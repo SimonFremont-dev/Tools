@@ -22,6 +22,8 @@ jobs:
       - uses: jdx/mise-action@v2
       - run: pipx install pre-commit
       - run: pre-commit run --all-files
+      - name: branch name (conventionalbranch.org)
+        run: ./scripts/check-branch-name.sh "${{ github.head_ref }}"
 
   format:
     name: 2. format check

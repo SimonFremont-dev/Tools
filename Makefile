@@ -2,7 +2,7 @@
 
 BIN ?= bin/tools
 SMOKE_DIR ?= /tmp/tools-smoke
-STAGES ?= dev,quality,build,cicd,kubernetes,ai,docs
+STAGES ?= dev,quality,build,cicd,kubernetes,ai,docs,database
 
 setup:
 	go mod download
@@ -27,7 +27,7 @@ build:
 
 smoke: build
 	rm -rf $(SMOKE_DIR)
-	$(BIN) new demo --lang go --module github.com/me/demo --stages $(STAGES) --dir $(SMOKE_DIR)
+	$(BIN) new demo --lang go --db postgres --module github.com/me/demo --stages $(STAGES) --dir $(SMOKE_DIR)
 	cd $(SMOKE_DIR) && go build ./... && go run ./cmd/demo
 
 clean:

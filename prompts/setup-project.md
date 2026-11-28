@@ -23,10 +23,11 @@ the stages, and alerts on tools missing from the Tools templates.
 1. Bootstrap the project: `tools new {{PROJECT}} --lang {{LANGUAGE}} --module {{MODULE}} --stages dev --git`.
    Go projects follow the Standard Go Project Layout (`cmd/`, `internal/`, `pkg/`, ...).
 2. Fill in the local dev environment from `templates/dev` (Makefile targets for `{{LANGUAGE}}`, `.env.example`, `docker-compose.yml` for `{{DATABASE}}`).
-3. Add quality tooling for `{{LANGUAGE}}` from `templates/quality`.
-4. Add build, release and container files from `templates/build` (multi-stage Dockerfile, `.dockerignore`, release config).
-5. Add the CI/CD pipeline for `{{CICD}}` from `templates/cicd`, matching `{{LANGUAGE}}`.
-6. If `{{DEPLOY_TARGET}}` is `kubernetes`, add manifests from `templates/kubernetes`; if `docker-compose`, extend `docker-compose.yml` with the app service.
-7. Add AI assets from `templates/ai` (`AGENTS.md`, per-language skills for `{{LANGUAGE}}`).
-8. Complete the docs from `templates/docs` (README, CONTRIBUTING, first ADR for `{{FRAMEWORK}}`).
-9. Verify: run lint, tests and build; resolve every `TODO` left by the templates.
+3. Add quality tooling for `{{LANGUAGE}}` from `templates/quality`, including the conventional-branch pre-push hook (`make hooks`) and the conventional-commit pre-commit hook; see `templates/docs/docs/git-workflow.md`.
+4. Add database management from `templates/database` with `--db {{DATABASE}}` (Atlas `atlas.hcl` + `migrations/`; postgres/mysql/sqlite).
+5. Add build, release and container files from `templates/build` (multi-stage Dockerfile, `.dockerignore`, release config).
+6. Add the CI/CD pipeline for `{{CICD}}` from `templates/cicd`, matching `{{LANGUAGE}}`.
+7. If `{{DEPLOY_TARGET}}` is `kubernetes`, add manifests from `templates/kubernetes`; if `docker-compose`, extend `docker-compose.yml` with the app service.
+8. Add AI assets from `templates/ai` (`AGENTS.md`, per-language and practice skills for `{{LANGUAGE}}`).
+9. Complete the docs from `templates/docs` (README, CONTRIBUTING, git-workflow, first ADR for `{{FRAMEWORK}}`).
+10. Verify: run lint, tests and build; resolve every `TODO` left by the templates.

@@ -32,7 +32,7 @@ tools/
 - command/		- run and capture external commands
 - env/			- load KEY=VALUE pairs from env files
 - prompts/		- prompt templates to give an AI (setup todos, reviews)
-- templates/		- project templates by stage (bootstrap, dev, quality, build, cicd, kubernetes, ai, docs)
+- templates/		- project templates by stage (bootstrap, dev, quality, build, cicd, kubernetes, ai, docs, database)
 - docs/			- conventions for templates and placeholders
 - scaffold.go		- embed + render engine for templates/
 - go.mod			- Go module file
