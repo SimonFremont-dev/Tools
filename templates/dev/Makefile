@@ -1,8 +1,9 @@
-.PHONY: setup run test lint fmt fmt-check security build clean docker-up docker-down docker-build k8s-deploy k8s-destroy hooks db-lint db-new db-apply db-status
+.PHONY: setup run test lint fmt fmt-check security build clean docker-up docker-down docker-build k8s-deploy k8s-destroy hooks env db-lint db-new db-apply db-status
 
 PROJECT ?= {{PROJECT}}
 DOCKER_IMAGE ?= $(PROJECT):latest
 KUSTOMIZE_ENV ?= dev
+DB ?= postgres
 
 -include Makefile.lang
 
@@ -61,14 +62,17 @@ k8s-destroy:
 hooks:
 	git config core.hooksPath githooks
 
+env:
+	@if [ ! -f .env ]; then cat .env.example .env.*.example > .env 2>/dev/null || cp .env.example .env; echo "created .env from the examples - edit it with real values (gitignored)"; fi
+
 db-lint:
-	atlas migrate lint --env dev
+	atlas migrate lint --env dev --config file://atlas.$(DB).hcl
 
 db-new:
-	atlas migrate new $(name)
+	atlas migrate new $(name) --config file://atlas.$(DB).hcl
 
 db-apply:
-	atlas migrate apply --env dev
+	atlas migrate apply --env dev --config file://atlas.$(DB).hcl
 
 db-status:
-	atlas migrate status --env dev
+	atlas migrate status --env dev --config file://atlas.$(DB).hcl

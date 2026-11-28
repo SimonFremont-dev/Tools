@@ -8,7 +8,8 @@ setup, re-run the skill — it asks the questions and re-applies the stages.
 - Module / import path: {{MODULE}}
 - Container image: {{IMAGE}}
 - Framework / main libraries: TODO
-- Database: {{DB}} — Atlas config in `atlas.hcl`, history in `migrations/` (see `sql-migrations` skill)
+- Database(s): {{DB}} — one `atlas.<db>.hcl` per engine, history in `migrations/`;
+  credentials in `.env.<db>.example` merged into gitignored `.env` via `make env`
 - Other data stores & infrastructure: TODO (local services in `docker-compose.yml`)
 - CI/CD: github-actions — see `PIPELINE.md` and `.github/workflows/`
 - Deployment target: TODO (`none` | `docker-compose` | `kubernetes` — see `deployments/`)

@@ -64,6 +64,15 @@ func TestNew(t *testing.T) {
 		t.Errorf("main.go still contains placeholders: %q", data)
 	}
 
+	gitignore, err := os.ReadFile(filepath.Join(dir, ".gitignore"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(string(gitignore), ".env") {
+		t.Error(".gitignore must ignore .env (credentials stay local)")
+	}
+
 	for _, f := range []string{"Makefile", ".env.example", "docker-compose.yml", ".gitignore", ".editorconfig", ".gitattributes", "LICENSE", "README.md"} {
 		if _, err := os.Stat(filepath.Join(dir, f)); err != nil {
 			t.Errorf("expected %s in scaffolded project: %v", f, err)
@@ -158,9 +167,9 @@ func TestApply(t *testing.T) {
 
 func TestNewWithDevAndQualityStages(t *testing.T) {
 	langFiles := map[string][]string{
-		"go":     {"Makefile.lang", ".tool-versions", ".golangci.yml", "scripts/lint-report.sh", ".goreleaser.yaml", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/cd.yml", ".github/workflows/docker.yml", ".github/workflows/release.yml", ".github/dependabot.yml", ".github/pull_request_template.md", ".github/ISSUE_TEMPLATE/bug_report.yml", "PIPELINE.md", "deployments/kustomization.yaml", "deployments/deployment.yaml", "deployments/service.yaml", "deployments/ingress.yaml", "deployments/hpa.yaml", "deployments/overlays/dev/kustomization.yaml", "deployments/overlays/staging/kustomization.yaml", "deployments/overlays/prod/kustomization.yaml", "skaffold.yaml", "AGENTS.md", ".skills/project-spec/SKILL.md", ".skills/go/SKILL.md", ".skills/tdd/SKILL.md", ".skills/clean-code/SKILL.md", ".skills/clean-architecture/SKILL.md", "docs/README.md", "docs/spec.md", "docs/adr/0000-template.md", "docs/runbook.md", "docs/git-workflow.md", "CONTRIBUTING.md", "atlas.hcl", "migrations/README.md", "scripts/check-branch-name.sh", "githooks/pre-push", ".skills/sql-migrations/SKILL.md", ".skills/git-conventions/SKILL.md"},
-		"node":   {"Makefile.lang", ".tool-versions", "eslint.config.js", ".prettierrc", "commitlint.config.js", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/cd.yml", ".github/workflows/docker.yml", ".github/dependabot.yml", ".github/pull_request_template.md", "PIPELINE.md", "AGENTS.md", ".skills/project-spec/SKILL.md", ".skills/tdd/SKILL.md", ".skills/clean-code/SKILL.md", ".skills/clean-architecture/SKILL.md", "docs/README.md", "docs/spec.md", "docs/adr/0000-template.md", "docs/runbook.md", "docs/git-workflow.md", "CONTRIBUTING.md", "atlas.hcl", "migrations/README.md", "scripts/check-branch-name.sh", "githooks/pre-push", ".skills/sql-migrations/SKILL.md", ".skills/git-conventions/SKILL.md"},
-		"python": {"Makefile.lang", ".tool-versions", "ruff.toml", "mypy.ini", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/cd.yml", ".github/workflows/docker.yml", ".github/dependabot.yml", ".github/pull_request_template.md", "PIPELINE.md", "AGENTS.md", ".skills/project-spec/SKILL.md", ".skills/tdd/SKILL.md", ".skills/clean-code/SKILL.md", ".skills/clean-architecture/SKILL.md", "docs/README.md", "docs/spec.md", "docs/adr/0000-template.md", "docs/runbook.md", "docs/git-workflow.md", "CONTRIBUTING.md", "atlas.hcl", "migrations/README.md", "scripts/check-branch-name.sh", "githooks/pre-push", ".skills/sql-migrations/SKILL.md", ".skills/git-conventions/SKILL.md"},
+		"go":     {"Makefile.lang", ".tool-versions", ".golangci.yml", "scripts/lint-report.sh", ".goreleaser.yaml", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/cd.yml", ".github/workflows/docker.yml", ".github/workflows/release.yml", ".github/dependabot.yml", ".github/pull_request_template.md", ".github/ISSUE_TEMPLATE/bug_report.yml", "PIPELINE.md", "deployments/kustomization.yaml", "deployments/deployment.yaml", "deployments/service.yaml", "deployments/ingress.yaml", "deployments/hpa.yaml", "deployments/overlays/dev/kustomization.yaml", "deployments/overlays/staging/kustomization.yaml", "deployments/overlays/prod/kustomization.yaml", "skaffold.yaml", "AGENTS.md", ".skills/project-spec/SKILL.md", ".skills/go/SKILL.md", ".skills/tdd/SKILL.md", ".skills/clean-code/SKILL.md", ".skills/clean-architecture/SKILL.md", "docs/README.md", "docs/spec.md", "docs/adr/0000-template.md", "docs/runbook.md", "docs/git-workflow.md", "CONTRIBUTING.md", "atlas.postgres.hcl", ".env.postgres.example", "migrations/README.md", "scripts/check-branch-name.sh", "githooks/pre-push", ".skills/sql-migrations/SKILL.md", ".skills/git-conventions/SKILL.md"},
+		"node":   {"Makefile.lang", ".tool-versions", "eslint.config.js", ".prettierrc", "commitlint.config.js", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/cd.yml", ".github/workflows/docker.yml", ".github/dependabot.yml", ".github/pull_request_template.md", "PIPELINE.md", "AGENTS.md", ".skills/project-spec/SKILL.md", ".skills/tdd/SKILL.md", ".skills/clean-code/SKILL.md", ".skills/clean-architecture/SKILL.md", "docs/README.md", "docs/spec.md", "docs/adr/0000-template.md", "docs/runbook.md", "docs/git-workflow.md", "CONTRIBUTING.md", "atlas.postgres.hcl", ".env.postgres.example", "migrations/README.md", "scripts/check-branch-name.sh", "githooks/pre-push", ".skills/sql-migrations/SKILL.md", ".skills/git-conventions/SKILL.md"},
+		"python": {"Makefile.lang", ".tool-versions", "ruff.toml", "mypy.ini", "Dockerfile", ".dockerignore", ".github/workflows/ci.yml", ".github/workflows/cd.yml", ".github/workflows/docker.yml", ".github/dependabot.yml", ".github/pull_request_template.md", "PIPELINE.md", "AGENTS.md", ".skills/project-spec/SKILL.md", ".skills/tdd/SKILL.md", ".skills/clean-code/SKILL.md", ".skills/clean-architecture/SKILL.md", "docs/README.md", "docs/spec.md", "docs/adr/0000-template.md", "docs/runbook.md", "docs/git-workflow.md", "CONTRIBUTING.md", "atlas.postgres.hcl", ".env.postgres.example", "migrations/README.md", "scripts/check-branch-name.sh", "githooks/pre-push", ".skills/sql-migrations/SKILL.md", ".skills/git-conventions/SKILL.md"},
 	}
 	for lang, files := range langFiles {
 		t.Run(lang, func(t *testing.T) {
@@ -316,13 +325,28 @@ func TestDatabaseStageOverlay(t *testing.T) {
 				t.Fatalf("New() error = %v", err)
 			}
 
-			atlas, err := os.ReadFile(filepath.Join(dir, "atlas.hcl"))
+			atlas, err := os.ReadFile(filepath.Join(dir, "atlas."+db+".hcl"))
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if !strings.Contains(string(atlas), db) {
-				t.Errorf("db %s: atlas.hcl does not mention %s:\n%s", db, db, atlas)
+			dbEnv := strings.ToUpper(db)
+			if db != "sqlite" && !strings.Contains(string(atlas), dbEnv+"_DATABASE_URL") {
+				t.Errorf("db %s: atlas.%s.hcl does not read %s_Database_URL from env:\n%s", db, db, dbEnv, atlas)
+			}
+
+			if strings.Contains(string(atlas), "dev:dev@") {
+				t.Errorf("db %s: atlas config must not embed credentials:\n%s", db, atlas)
+			}
+
+			envExample, err := os.ReadFile(filepath.Join(dir, ".env."+db+".example"))
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !strings.Contains(string(envExample), dbEnv+"_DATABASE_URL=") &&
+				!strings.Contains(string(envExample), dbEnv+"_STAGING_DATABASE_URL=") {
+				t.Errorf("db %s: .env.%s.example missing a %s_*_DATABASE_URL entry", db, db, dbEnv)
 			}
 
 			if _, err := os.Stat(filepath.Join(dir, "migrations", "README.md")); err != nil {
@@ -339,6 +363,31 @@ func TestDatabaseStageOverlay(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestMultipleDatabases(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "demo")
+	vars := DefaultVars("demo", "", "go", "postgres,mysql")
+
+	err := New("demo", "go", "postgres,mysql", []string{"database"}, dir, vars, false)
+	if err != nil {
+		t.Fatalf("New() error = %v", err)
+	}
+
+	for _, f := range []string{"atlas.postgres.hcl", "atlas.mysql.hcl", ".env.postgres.example", ".env.mysql.example", "migrations/README.md"} {
+		if _, err := os.Stat(filepath.Join(dir, f)); err != nil {
+			t.Errorf("multi-db: expected %s: %v", f, err)
+		}
+	}
+
+	atlas, err := os.ReadFile(filepath.Join(dir, "atlas.mysql.hcl"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !strings.Contains(string(atlas), "MYSQL_DATABASE_URL") {
+		t.Errorf("atlas.mysql.hcl was not rendered with DB=mysql:\n%s", atlas)
 	}
 }
 

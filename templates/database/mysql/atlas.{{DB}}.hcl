@@ -1,8 +1,9 @@
 # Atlas project configuration - https://atlasgo.io/
 # Database: MySQL. Schema history: migrations/ (commit atlas.sum).
+# Credentials come from the environment - see .env.{{DB}}.example; never commit them.
 
 env "dev" {
-  url      = "mysql://dev:dev@localhost:3306/{{PROJECT}}"
+  url      = env("{{DBENV}}_DATABASE_URL")
   dev_url  = "docker://mysql:8"
   migration {
     dir = "file://migrations"
@@ -10,7 +11,7 @@ env "dev" {
 }
 
 env "staging" {
-  url      = "env('STAGING_DATABASE_URL')"
+  url      = env("{{DBENV}}_STAGING_DATABASE_URL")
   dev_url  = "docker://mysql:8"
   migration {
     dir = "file://migrations"

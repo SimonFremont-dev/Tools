@@ -1,8 +1,9 @@
 # Atlas project configuration - https://atlasgo.io/
 # Database: PostgreSQL. Schema history: migrations/ (commit atlas.sum).
+# Credentials come from the environment - see .env.{{DB}}.example; never commit them.
 
 env "dev" {
-  url      = "postgres://dev:dev@localhost:5432/{{PROJECT}}?sslmode=disable"
+  url      = env("{{DBENV}}_DATABASE_URL")
   dev_url  = "docker://postgres:16"
   migration {
     dir = "file://migrations"
@@ -10,7 +11,7 @@ env "dev" {
 }
 
 env "staging" {
-  url      = "env('STAGING_DATABASE_URL')"
+  url      = env("{{DBENV}}_STAGING_DATABASE_URL")
   dev_url  = "docker://postgres:16"
   migration {
     dir = "file://migrations"

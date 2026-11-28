@@ -12,8 +12,9 @@ Ask the user, batching related questions together:
 - Project name and module/import path (e.g. `github.com/me/myapp`)?
 - Language: `go` | `node` | `python`?
 - Framework and main libraries (e.g. gorilla/mux, express, fastapi)?
-- Database: `postgres` | `mysql` | `sqlite` | `none`? (drives the `--db` flag,
-  the `atlas.hcl` datasource and the `database` stage)
+- Database(s): `postgres`, `mysql`, `sqlite`, `none`, or comma-separated for
+  several (e.g. `postgres,mysql`)? Drives the `--db` flag, one `atlas.<db>.hcl`
+  per engine and the `.env.<db>.example` credential templates
 - Other data stores and infrastructure dependencies (redis, kafka, ...)?
 - CI/CD provider: `github-actions` (default) | `gitlab-ci` | other?
 - Deployment target: `none` | `docker-compose` | `kubernetes`?

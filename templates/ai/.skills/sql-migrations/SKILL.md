@@ -10,8 +10,9 @@ The project's database structure history lives in `migrations/`, managed by
 
 - `NNNN_name.sql` files, created in order
 - `atlas.sum` — integrity hash of the migration history, ALWAYS commit it
-- `atlas.hcl` — per-environment config; datasource per database engine
-  (postgres / mysql / sqlite, chosen with `--db` at scaffold time)
+- `atlas.<db>.hcl` — per-environment config, one per engine (chosen with `--db`,
+  comma-separated for several); URLs come from env vars, credentials live in
+  `.env.<db>.example` merged into the gitignored `.env` (`make env`) — never commit them
 
 ## Workflow
 

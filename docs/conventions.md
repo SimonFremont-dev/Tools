@@ -8,7 +8,8 @@
 - `templates/database/<db>/` — database overlay (`postgres`, `mysql`, `sqlite`),
   merged like a language overlay when `--db` is set. In general, top-level
   subdirectories of a stage named after a language or a database are overlays,
-  never content.
+  never content. In the `database` stage each engine overlay ships
+  `atlas.{{DB}}.hcl` and `.env.{{DB}}.example` (credential templates; `.env` itself stays gitignored).
 - `templates/bootstrap/common/` — language-independent bootstrap files (LICENSE,
   .gitattributes, .editorconfig), merged before `bootstrap/<lang>/`; not listed as a language.
 - `prompts/` — prompt templates given to an AI agent; they are not copied into projects.
@@ -24,7 +25,9 @@ Rendered by the scaffold engine (`scaffold.go`) before files are written:
 - `{{YEAR}}` — current year
 - `{{IMAGE}}` — container image reference: `ghcr.io/<owner>/<repo>` when
   `{{MODULE}}` is a `github.com/...` path, else the project name
-- `{{DB}}` — database engine (`postgres` | `mysql` | `sqlite`, default `postgres`)
+- `{{DB}}` — database engine (`postgres` | `mysql` | `sqlite`, default `postgres`);
+  `--db` accepts a comma-separated list for several engines, each rendered with its own `{{DB}}`
+- `{{DBENV}}` — uppercased `{{DB}}`, used in env var names (`{{DBENV}}_DATABASE_URL`)
 
 Placeholders also work in file and directory names, e.g. `cmd/{{PROJECT}}/main.go`.
 

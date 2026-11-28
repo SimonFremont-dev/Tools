@@ -57,8 +57,9 @@ func usage() {
 
 Usage:
   tools list
-  tools new <project> --lang go --db postgres [--module PATH] [--dir DIR] [--stages dev,quality] [--git] [--force]
-  tools apply <stage> --dir DIR [--lang go] [--db postgres] [--project NAME] [--force]
+  tools new <project> --lang go --db postgres[,mysql] [--module PATH] [--dir DIR]
+           [--stages dev,quality] [--git] [--force]
+  tools apply <stage> --dir DIR [--lang go] [--db postgres[,mysql]] [--project NAME] [--force]
 
 Environment:
   TOOLS_LANG   default language for --lang (default "go")
@@ -92,7 +93,7 @@ func cmdList() error {
 func cmdNew(args []string) error {
 	flagSet := flag.NewFlagSet("new", flag.ExitOnError)
 	lang := flagSet.String("lang", env.Get("TOOLS_LANG", "go"), "language template")
-	database := flagSet.String("db", env.Get("TOOLS_DB", "postgres"), "database overlay (postgres, mysql, sqlite)")
+	database := flagSet.String("db", env.Get("TOOLS_DB", "postgres"), "db overlay(s), comma-separated (postgres,mysql)")
 	module := flagSet.String("module", "", "module path (default: project name)")
 	dir := flagSet.String("dir", "", "target directory (default: ./<project>)")
 	stages := flagSet.String("stages", "", "comma-separated extra stages (dev,quality,...)")
@@ -143,7 +144,7 @@ func cmdApply(args []string) error {
 	flagSet := flag.NewFlagSet("apply", flag.ExitOnError)
 	dir := flagSet.String("dir", ".", "project directory")
 	lang := flagSet.String("lang", env.Get("TOOLS_LANG", "go"), "language template")
-	database := flagSet.String("db", env.Get("TOOLS_DB", "postgres"), "database overlay (postgres, mysql, sqlite)")
+	database := flagSet.String("db", env.Get("TOOLS_DB", "postgres"), "db overlay(s), comma-separated (postgres,mysql)")
 	project := flagSet.String("project", "", "project name for placeholders (default: base name of --dir)")
 	force := flagSet.Bool("force", false, "overwrite existing files")
 

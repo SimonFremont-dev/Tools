@@ -27,8 +27,9 @@ for the layout rules and placeholders.
   (e.g. `go`)
 - `docs/` — `docs/` index + `spec.md` (project spec), ADR template, runbook,
   `git-workflow.md` (conventional commits + branches), and a generated-project `CONTRIBUTING.md`
-- `database/` — Atlas schema management: `migrations/` + README, `atlas.hcl`
-  per engine overlay (`postgres`, `mysql`, `sqlite`), `make db-*` targets
+- `database/` — Atlas schema management: `migrations/` + README, per-engine
+  overlay (`postgres`, `mysql`, `sqlite`; `--db a,b` for several) with
+  `atlas.{{DB}}.hcl` + `.env.{{DB}}.example` credential templates, `make db-*` / `make env`
 
 Scaffold a project with the CLI:
 

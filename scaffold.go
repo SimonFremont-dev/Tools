@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -55,8 +56,13 @@ func DefaultVars(project, module, lang, database string) Vars {
 		module = project
 	}
 
-	if database == "" {
-		database = "postgres"
+	dbName := database
+	if i := strings.Index(dbName, ","); i >= 0 {
+		dbName = dbName[:i]
+	}
+
+	if dbName == "" {
+		dbName = "postgres"
 	}
 
 	image := project
@@ -69,7 +75,8 @@ func DefaultVars(project, module, lang, database string) Vars {
 		"PROJECT": project,
 		"MODULE":  module,
 		"LANG":    lang,
-		"DB":      database,
+		"DB":      dbName,
+		"DBENV":   strings.ToUpper(dbName),
 		"YEAR":    strconv.Itoa(time.Now().Year()),
 		"IMAGE":   image,
 	}
@@ -119,7 +126,7 @@ func DBs() ([]string, error) {
 		}
 
 		for _, e := range entries {
-			if e.Name() == "atlas.hcl" {
+			if strings.HasPrefix(e.Name(), "atlas.") && strings.HasSuffix(e.Name(), ".hcl") {
 				dbs = append(dbs, name)
 
 				break
@@ -236,19 +243,33 @@ func copyOtherStage(stage, lang, database, dir string, vars Vars, force bool) er
 		return err
 	}
 
-	for _, ov := range []string{lang, database} {
-		if ov == "" {
+	overlays := []string{lang}
+	if database != "" {
+		overlays = append(overlays, strings.Split(database, ",")...)
+	}
+
+	for idx, overlayName := range overlays {
+		if overlayName == "" {
 			continue
 		}
 
-		overlay := base + "/" + ov
+		overlay := base + "/" + overlayName
 
 		_, overlayErr := templatesFS.ReadDir(overlay)
-		if overlayErr == nil {
-			err = copyTree(overlay, dir, vars, force, nil)
-			if err != nil {
-				return err
-			}
+		if overlayErr != nil {
+			continue
+		}
+
+		overlayVars := vars
+		if idx > 0 {
+			overlayVars = maps.Clone(vars)
+			overlayVars["DB"] = overlayName
+			overlayVars["DBENV"] = strings.ToUpper(overlayName)
+		}
+
+		err = copyTree(overlay, dir, overlayVars, force, nil)
+		if err != nil {
+			return err
 		}
 	}
 
