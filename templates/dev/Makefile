@@ -1,0 +1,78 @@
+.PHONY: setup run test lint fmt fmt-check security build clean docker-up docker-down docker-build k8s-deploy k8s-destroy hooks env db-lint db-new db-apply db-status
+
+PROJECT ?= {{PROJECT}}
+DOCKER_IMAGE ?= $(PROJECT):latest
+KUSTOMIZE_ENV ?= dev
+DB ?= postgres
+
+-include Makefile.lang
+
+SETUP_CMD ?= @echo "setup: nothing configured"
+RUN_CMD ?= @echo "run: nothing configured"
+TEST_CMD ?= @echo "test: nothing configured"
+LINT_CMD ?= @echo "lint: nothing configured"
+FMT_CMD ?= @echo "fmt: nothing configured"
+FMT_CHECK_CMD ?= @echo "fmt-check: nothing configured"
+SECURITY_CMD ?= @echo "security: nothing configured"
+BUILD_CMD ?= @echo "build: nothing configured"
+CLEAN_CMD ?= @echo "clean: nothing configured"
+
+setup:
+	$(SETUP_CMD)
+
+run:
+	$(RUN_CMD)
+
+test:
+	$(TEST_CMD)
+
+lint:
+	$(LINT_CMD)
+
+fmt:
+	$(FMT_CMD)
+
+fmt-check:
+	$(FMT_CHECK_CMD)
+
+security:
+	$(SECURITY_CMD)
+
+build:
+	$(BUILD_CMD)
+
+clean:
+	$(CLEAN_CMD)
+
+docker-up:
+	docker compose up -d
+
+docker-down:
+	docker compose down
+
+docker-build:
+	docker build -t $(DOCKER_IMAGE) .
+
+k8s-deploy:
+	kubectl apply -k deployments/overlays/$(KUSTOMIZE_ENV)
+
+k8s-destroy:
+	kubectl delete -k deployments/overlays/$(KUSTOMIZE_ENV)
+
+hooks:
+	git config core.hooksPath githooks
+
+env:
+	@if [ ! -f .env ]; then cat .env.example .env.*.example > .env 2>/dev/null || cp .env.example .env; echo "created .env from the examples - edit it with real values (gitignored)"; fi
+
+db-lint:
+	atlas migrate lint --env dev --config file://atlas.$(DB).hcl
+
+db-new:
+	atlas migrate new $(name) --config file://atlas.$(DB).hcl
+
+db-apply:
+	atlas migrate apply --env dev --config file://atlas.$(DB).hcl
+
+db-status:
+	atlas migrate status --env dev --config file://atlas.$(DB).hcl

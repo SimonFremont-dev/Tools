@@ -1,0 +1,35 @@
+version: 2
+
+project_name: {{PROJECT}}
+
+builds:
+  - id: {{PROJECT}}
+    main: ./cmd/{{PROJECT}}
+    binary: {{PROJECT}}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - formats:
+      - tar.gz
+    name_template: "{{PROJECT}}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "^ci:"

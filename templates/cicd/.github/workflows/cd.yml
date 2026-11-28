@@ -1,0 +1,36 @@
+name: CD
+
+# Runs on main after CI. Validates the Kubernetes manifests, then deploys to
+# staging. Fill the deploy step with your actual mechanism (kubectl with
+# cluster credentials, ArgoCD, Flux, ...).
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate-manifests:
+    name: validate k8s manifests (staging overlay)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-kubectl@v4
+      - name: install kustomize
+        run: curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+      - name: kustomize build + client dry-run
+        run: kustomize build deployments/overlays/staging | kubectl apply --dry-run=client --validate=false -f -
+
+  deploy-staging:
+    name: deploy to staging
+    needs: validate-manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: deploy (fill in)
+        run: |
+          echo "Deploy {{PROJECT}} to staging from here, e.g.:"
+          echo "  kubectl apply -k deployments/overlays/staging"
+          echo "  argocd app sync {{PROJECT}}-staging"

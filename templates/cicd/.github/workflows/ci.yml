@@ -1,0 +1,72 @@
+name: CI
+
+# Standardized merge gates. Every job runs on pull requests; all six job
+# names are the required status checks to merge into main.
+# Language/tool specifics plug in through the *_CMD variables in Makefile.lang.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  pre-checks:
+    name: 1. pre-checks (hygiene)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - run: pipx install pre-commit
+      - run: pre-commit run --all-files
+      - name: branch name (conventionalbranch.org)
+        run: ./scripts/check-branch-name.sh "${{ github.head_ref }}"
+
+  format:
+    name: 2. format check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - run: make fmt-check
+
+  lint:
+    name: 3. lint (static analysis)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - run: make setup
+      - run: make lint
+
+  security:
+    name: 4. security (secrets + deps)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gitleaks/gitleaks-action@v2
+      - uses: jdx/mise-action@v2
+      - run: make setup
+      - run: make security
+
+  test:
+    name: 5. tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - run: make setup
+      - run: make test
+
+  build:
+    name: 6. build (artifacts + image)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - run: make setup
+      - run: make build
+      - run: make docker-build

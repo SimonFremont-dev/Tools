@@ -1,0 +1,17 @@
+apiVersion: skaffold/v4beta11
+kind: Config
+metadata:
+  name: {{PROJECT}}
+build:
+  artifacts:
+    - image: {{IMAGE}}
+      docker:
+        dockerfile: Dockerfile
+  tagPolicy:
+    gitCommit: {}
+manifests:
+  kustomize:
+    paths:
+      - deployments/overlays/dev
+deploy:
+  kubectl: {}

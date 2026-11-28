@@ -1,0 +1,14 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      day: monday
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      day: monday
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      day: monday

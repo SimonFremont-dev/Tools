@@ -1,0 +1,4 @@
+go 1.23
+golangci-lint 2.15.0
+govulncheck 1.1.4
+goreleaser 2.5.1
